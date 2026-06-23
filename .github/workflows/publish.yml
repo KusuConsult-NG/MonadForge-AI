@@ -25,11 +25,11 @@ jobs:
       - name: Run Linter
         run: npm run lint
 
-      - name: Run Tests with Coverage
-        run: npm test
-
       - name: Build Workspaces
         run: npm run build
+
+      - name: Run Tests with Coverage
+        run: npm test
 
   publish:
     needs: lint-test-build
