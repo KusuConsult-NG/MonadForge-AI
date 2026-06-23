@@ -1,0 +1,33 @@
+{
+  "name": "@monadforge/cli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CLI interface for MonadForge AI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "monadforge": "./bin/monadforge.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@monadforge/audit": "*",
+    "@monadforge/actions": "*",
+    "@monadforge/knowledge": "*",
+    "@monadforge/mcp": "*",
+    "@monadforge/sdk": "*",
+    "@monadforge/templates": "*",
+    "@monadforge/runtime": "*",
+    "@monadforge/agent-runtime": "*",
+    "@monadforge/review": "*",
+    "@monadforge/benchmarks": "*",
+    "@monadforge/ai": "*",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

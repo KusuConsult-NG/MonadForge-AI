@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../sdk" },
+    { "path": "../intent" },
+    { "path": "../plan" },
+    { "path": "../skills" },
+    { "path": "../actions" },
+    { "path": "../memory" },
+    { "path": "../repair" },
+    { "path": "../composition" },
+    { "path": "../knowledge" },
+    { "path": "../runtime" },
+    { "path": "../agent-runtime" },
+    { "path": "../review" }
+  ]
+}

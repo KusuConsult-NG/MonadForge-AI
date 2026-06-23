@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../sdk" },
+    { "path": "../runtime" },
+    { "path": "../agent-runtime" },
+    { "path": "../review" },
+    { "path": "../monadforge" }
+  ]
+}

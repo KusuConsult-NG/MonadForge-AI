@@ -1,0 +1,205 @@
+{
+  "$ref": "#/definitions/trace",
+  "definitions": {
+    "trace": {
+      "type": "object",
+      "properties": {
+        "traceId": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "intent": {},
+        "plan": {
+          "type": "object",
+          "properties": {
+            "steps": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "number"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "skillName": {
+                    "type": "string",
+                    "enum": [
+                      "generate_contract",
+                      "run_audit",
+                      "deploy_contract",
+                      "verify_contract",
+                      "search_docs",
+                      "execute_action"
+                    ]
+                  },
+                  "params": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "failed",
+                      "success"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "description",
+                  "skillName",
+                  "params",
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "steps"
+          ],
+          "additionalProperties": false
+        },
+        "stepsExecuted": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "stepId": {
+                "type": "number"
+              },
+              "skillName": {
+                "type": "string"
+              },
+              "input": {},
+              "output": {},
+              "durationMs": {
+                "type": "number"
+              },
+              "timestamp": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "stepId",
+              "skillName",
+              "durationMs",
+              "timestamp"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "repairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "originalCode": {
+                "type": "string"
+              },
+              "repairedCode": {
+                "type": "string"
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "explanation": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "originalCode",
+              "repairedCode",
+              "issues"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "deployments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "contractAddress": {
+                "type": "string"
+              },
+              "transactionHash": {
+                "type": "string"
+              },
+              "gasUsed": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "success",
+                  "failed"
+                ]
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "verificationStatus": {
+                "type": "string"
+              },
+              "verificationMessage": {
+                "type": "string"
+              },
+              "implementationVerificationStatus": {
+                "type": "string"
+              },
+              "implementationVerificationMessage": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "contractAddress",
+              "transactionHash",
+              "gasUsed",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "explainabilityRationale": {
+          "type": "string"
+        },
+        "finalStatus": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failed"
+          ]
+        }
+      },
+      "required": [
+        "traceId",
+        "projectId",
+        "timestamp",
+        "plan",
+        "stepsExecuted",
+        "repairs",
+        "deployments",
+        "finalStatus"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

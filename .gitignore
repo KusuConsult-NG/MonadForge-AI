@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Compiled outputs
+dist/
+**/dist/
+*.tsbuildinfo
+**/tsconfig.tsbuildinfo
+
+# Coverage
+coverage/
+**/coverage/
+
+# Local run state and temporary reports
+.monadforge/
+repair-report.json
+architecture-report.md
+
+# Environment variables
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../sdk" },
+    { "path": "../intent" },
+    { "path": "../plan" },
+    { "path": "../composition" },
+    { "path": "../repair" },
+    { "path": "../actions" },
+    { "path": "../memory" },
+    { "path": "../knowledge" },
+    { "path": "../audit" }
+  ]
+}

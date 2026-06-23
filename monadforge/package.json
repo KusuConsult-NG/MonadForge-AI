@@ -1,0 +1,27 @@
+{
+  "name": "@monadforge/ai",
+  "version": "1.0.0",
+  "description": "Unified entrypoint, SDK wrapper, CLI and MCP server for MonadForge AI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "monadforge": "./bin/monadforge.js",
+    "monadforge-mcp": "./bin/monadforge-mcp.js"
+  },
+  "scripts": {
+    "build": "node build.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "ethers": "^6.11.1",
+    "zod": "^3.22.4",
+    "dotenv": "^16.4.5",
+    "commander": "^12.0.0",
+    "solc": "^0.8.20",
+    "@solidity-parser/parser": "^0.20.2",
+    "@modelcontextprotocol/sdk": "^1.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "@monadforge/benchmarks",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/run.js",
+  "types": "dist/run.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@monadforge/sdk": "*",
+    "@monadforge/agent-runtime": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

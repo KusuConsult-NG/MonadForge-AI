@@ -1,0 +1,18 @@
+{
+  "name": "@monadforge/audit",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@monadforge/sdk": "*",
+    "@solidity-parser/parser": "^0.20.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

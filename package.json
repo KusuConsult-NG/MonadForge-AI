@@ -1,0 +1,53 @@
+{
+  "name": "monadforge-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-native developer toolkit for Monad",
+  "workspaces": [
+    "mcp",
+    "skills",
+    "templates",
+    "knowledge",
+    "audit",
+    "actions",
+    "cli",
+    "sdk",
+    "intent",
+    "plan",
+    "runtime",
+    "repair",
+    "memory",
+    "composition",
+    "agent-runtime",
+    "review",
+    "benchmarks",
+    "monadforge"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"**/*.ts\""
+  },
+  "devDependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "@openzeppelin/contracts-upgradeable": "^5.0.2",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.24",
+    "@types/pg": "^8.11.2",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "dts-bundle-generator": "^9.5.1",
+    "esbuild": "^0.20.1",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.5",
+    "solc": "^0.8.20",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "zod-to-json-schema": "^3.25.2"
+  }
+}

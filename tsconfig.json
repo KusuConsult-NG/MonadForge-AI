@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "files": [],
+  "references": [
+    { "path": "sdk" },
+    { "path": "knowledge" },
+    { "path": "templates" },
+    { "path": "actions" },
+    { "path": "audit" },
+    { "path": "mcp" },
+    { "path": "skills" },
+    { "path": "cli" },
+    { "path": "intent" },
+    { "path": "plan" },
+    { "path": "runtime" },
+    { "path": "repair" },
+    { "path": "memory" },
+    { "path": "composition" },
+    { "path": "agent-runtime" },
+    { "path": "review" },
+    { "path": "benchmarks" },
+    { "path": "monadforge" }
+  ],
+  "exclude": [
+    "node_modules",
+    "**/dist",
+    "**/coverage"
+  ]
+}

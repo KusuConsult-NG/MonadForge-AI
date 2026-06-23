@@ -1,0 +1,19 @@
+{
+  "name": "@monadforge/actions",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@monadforge/sdk": "*",
+    "ethers": "^6.11.1",
+    "solc": "^0.8.20"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

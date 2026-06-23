@@ -1,0 +1,52 @@
+{
+  "$ref": "#/definitions/deployment",
+  "definitions": {
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "contractAddress": {
+          "type": "string"
+        },
+        "transactionHash": {
+          "type": "string"
+        },
+        "gasUsed": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failed"
+          ]
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "verificationStatus": {
+          "type": "string"
+        },
+        "verificationMessage": {
+          "type": "string"
+        },
+        "implementationVerificationStatus": {
+          "type": "string"
+        },
+        "implementationVerificationMessage": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "contractAddress",
+        "transactionHash",
+        "gasUsed",
+        "status"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
