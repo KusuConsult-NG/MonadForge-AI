@@ -15,7 +15,40 @@ export const SkillSchema = z.object({
     properties: z.record(z.any()),
     required: z.array(z.string()).optional(),
   }),
+  pricing: z.object({
+    price: z.string(),
+    token: z.string(),
+  }).optional(),
+  permissions: z.array(z.string()).optional(),
+  executionRequirements: z.record(z.any()).optional(),
 });
+
+// Skill Package Schema (Skill packaging layer)
+export const SkillPackageSchema = z.object({
+  skill: z.string(),
+  version: z.string(),
+  category: z.string(),
+  schema: SkillSchema,
+}).passthrough();
+
+// Agent Manifest Schema (Agent Identity Layer, ERC-8004 aligned)
+export const AgentManifestSchema = z.object({
+  agentId: z.string(),
+  name: z.string(),
+  version: z.string(),
+  description: z.string(),
+  skills: z.array(z.string()),
+  pricing: z.record(z.object({
+    price: z.string(),
+    token: z.string(),
+  })).optional(),
+  permissions: z.array(z.string()).optional(),
+  reputation: z.object({
+    score: z.number().optional(),
+    totalExecutions: z.number().optional(),
+    successRate: z.number().optional(),
+  }).optional(),
+}).passthrough();
 
 // 2. Plan Step Schema
 export const PlanStepSchema = z.object({

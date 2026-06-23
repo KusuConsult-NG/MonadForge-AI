@@ -1,0 +1,77 @@
+{
+  "$ref": "#/definitions/agent_manifest",
+  "definitions": {
+    "agent_manifest": {
+      "type": "object",
+      "properties": {
+        "agentId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pricing": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "price": {
+                "type": "string"
+              },
+              "token": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "price",
+              "token"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reputation": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "type": "number"
+            },
+            "totalExecutions": {
+              "type": "number"
+            },
+            "successRate": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "agentId",
+        "name",
+        "version",
+        "description",
+        "skills"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

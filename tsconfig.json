@@ -29,6 +29,7 @@
     { "path": "memory" },
     { "path": "composition" },
     { "path": "agent-runtime" },
+    { "path": "agent" },
     { "path": "review" },
     { "path": "benchmarks" },
     { "path": "monadforge" }

@@ -17,6 +17,7 @@
     { "path": "../knowledge" },
     { "path": "../runtime" },
     { "path": "../agent-runtime" },
-    { "path": "../review" }
+    { "path": "../review" },
+    { "path": "../agent" }
   ]
 }

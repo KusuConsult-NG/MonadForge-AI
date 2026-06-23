@@ -16,6 +16,7 @@
     "@monadforge/agent-runtime": "*",
     "@monadforge/review": "*",
     "@monadforge/ai": "*",
+    "@monadforge/agent": "*",
     "ethers": "^6.11.1"
   },
   "devDependencies": {

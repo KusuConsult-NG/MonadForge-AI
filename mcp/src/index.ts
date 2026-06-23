@@ -7,6 +7,7 @@ import {
 import { createLogger } from "@monadforge/sdk";
 import { monadforge } from "@monadforge/ai";
 import { MemoryEngine } from "@monadforge/memory";
+import { AgentIdentity, AgentRouter, AgentMarketplace } from "@monadforge/agent";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -154,6 +155,62 @@ export function createMcpServer(): Server {
             },
             required: ["projectId"],
           },
+        },
+        {
+          name: "discover_skills",
+          description: "List all registered agent capabilities, packaging metadata, pricing, and schemas.",
+          inputSchema: { type: "object", properties: {} },
+        },
+        {
+          name: "execute_skill",
+          description: "Execute a specific skill after payment verification.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              skillName: { type: "string", description: "The name of the skill to execute." },
+              params: { type: "object", description: "Parameters for the skill execution." },
+              paymentDetails: {
+                type: "object",
+                properties: {
+                  chargeId: { type: "string" },
+                  txHash: { type: "string" },
+                },
+                required: ["chargeId", "txHash"],
+              },
+            },
+            required: ["skillName", "params"],
+          },
+        },
+        {
+          name: "discover_agents",
+          description: "Discover other agents registered in the network.",
+          inputSchema: { type: "object", properties: {} },
+        },
+        {
+          name: "invoke_agent",
+          description: "Orchestrate/invoke another agent for a specific task.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              targetAgentId: { type: "string", description: "The ID of the target agent." },
+              skillName: { type: "string", description: "The name of the skill to invoke." },
+              params: { type: "object", description: "Parameters for the invocation." },
+              paymentDetails: {
+                type: "object",
+                properties: {
+                  chargeId: { type: "string" },
+                  txHash: { type: "string" },
+                },
+                required: ["chargeId", "txHash"],
+              },
+            },
+            required: ["targetAgentId", "skillName", "params"],
+          },
+        },
+        {
+          name: "get_pricing",
+          description: "Query execution fee manifest for registered capabilities.",
+          inputSchema: { type: "object", properties: {} },
         },
       ],
     };
@@ -329,6 +386,28 @@ export function createMcpServer(): Server {
         case "get_project_context": {
           const { projectId } = args as any;
           result = await memoryEngine.loadProjectContext(projectId);
+          break;
+        }
+        case "discover_skills": {
+          result = AgentMarketplace.getAvailableSkills();
+          break;
+        }
+        case "execute_skill": {
+          const { skillName, params, paymentDetails } = args as any;
+          result = await AgentRouter.invokeAgent("monadforge-ai", skillName, params, paymentDetails);
+          break;
+        }
+        case "discover_agents": {
+          result = AgentRouter.getRegisteredAgents();
+          break;
+        }
+        case "invoke_agent": {
+          const { targetAgentId, skillName, params, paymentDetails } = args as any;
+          result = await AgentRouter.invokeAgent(targetAgentId, skillName, params, paymentDetails);
+          break;
+        }
+        case "get_pricing": {
+          result = AgentMarketplace.getPricingManifest();
           break;
         }
         default:

@@ -29,6 +29,7 @@ module.exports = {
     'memory/src/**/*.ts',
     'composition/src/**/*.ts',
     'agent-runtime/src/**/*.ts',
+    'agent/src/**/*.ts',
     'review/src/**/*.ts',
     'monadforge/src/**/*.ts',
     '!**/node_modules/**',

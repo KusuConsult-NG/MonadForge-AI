@@ -60,6 +60,32 @@
             "properties"
           ],
           "additionalProperties": false
+        },
+        "pricing": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": "string"
+            },
+            "token": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "price",
+            "token"
+          ],
+          "additionalProperties": false
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "executionRequirements": {
+          "type": "object",
+          "additionalProperties": {}
         }
       },
       "required": [

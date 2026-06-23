@@ -19,6 +19,7 @@
     "memory",
     "composition",
     "agent-runtime",
+    "agent",
     "review",
     "benchmarks",
     "monadforge"

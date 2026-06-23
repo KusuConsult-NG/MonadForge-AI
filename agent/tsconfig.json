@@ -7,10 +7,7 @@
   "include": ["src/**/*.ts"],
   "references": [
     { "path": "../sdk" },
-    { "path": "../runtime" },
-    { "path": "../agent-runtime" },
-    { "path": "../review" },
-    { "path": "../agent" },
-    { "path": "../monadforge" }
+    { "path": "../skills" },
+    { "path": "../agent-runtime" }
   ]
 }

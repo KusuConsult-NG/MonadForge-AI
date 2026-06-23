@@ -7,6 +7,7 @@ import { RepairEngine } from "@monadforge/repair";
 import { SkillCompositionEngine } from "@monadforge/composition";
 import { ArchitectureReviewEngine } from "@monadforge/review";
 import { getConfig } from "@monadforge/sdk";
+import { AgentIdentity, AgentRouter, AgentMarketplace, MonetizedExecutor, MockPaymentAdapter } from "@monadforge/agent";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -265,6 +266,22 @@ export const monadforge = {
     review: async (contracts: Record<string, string>): Promise<any> => {
       return reviewEngine.reviewArchitecture(contracts);
     },
+  },
+  agent: {
+    getManifest: () => AgentIdentity.getManifest(),
+    getSkillPackages: () => AgentIdentity.getSkillPackages(),
+    invokeAgent: async (targetAgentId: string, skillName: string, params: Record<string, any>, paymentDetails?: any, context?: any) => {
+      return AgentRouter.invokeAgent(targetAgentId, skillName, params, paymentDetails, context);
+    },
+    registerAgent: (agentId: string, manifest: any) => {
+      AgentRouter.registerAgent(agentId, manifest);
+    },
+    getPricingManifest: () => AgentMarketplace.getPricingManifest(),
+    getReputation: () => AgentMarketplace.getReputation(),
+    getExecutionHistory: (filterAgentId?: string) => AgentMarketplace.getExecutionHistory(filterAgentId),
+    recordExecution: (record: any) => AgentMarketplace.recordExecution(record),
+    createExecutor: (paymentAdapter?: any) => new MonetizedExecutor(paymentAdapter),
+    createMockPaymentAdapter: () => new MockPaymentAdapter()
   },
 };
 export default monadforge;

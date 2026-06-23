@@ -85,14 +85,14 @@ describe("MCP Server Unit Tests", () => {
     });
   });
 
-  it("should list exactly 9 required tools", async () => {
+  it("should list exactly 14 required tools", async () => {
     server = createMcpServer();
     const listToolsHandler = server._requestHandlers.get("tools/list");
     expect(listToolsHandler).toBeDefined();
 
     const response = await listToolsHandler({ method: "tools/list" });
     expect(response.tools).toBeDefined();
-    expect(response.tools.length).toBe(9);
+    expect(response.tools.length).toBe(14);
 
     const names = response.tools.map((t: any) => t.name);
     expect(names).toContain("create_project");
@@ -104,6 +104,11 @@ describe("MCP Server Unit Tests", () => {
     expect(names).toContain("continue_project");
     expect(names).toContain("review_architecture");
     expect(names).toContain("get_project_context");
+    expect(names).toContain("discover_skills");
+    expect(names).toContain("execute_skill");
+    expect(names).toContain("discover_agents");
+    expect(names).toContain("invoke_agent");
+    expect(names).toContain("get_pricing");
   });
 
   describe("Tool Call Invocations", () => {
@@ -434,6 +439,101 @@ describe("MCP Server Unit Tests", () => {
       });
       expect(response.isError).toBeUndefined();
       mockMonadforgeJsonContent = '{"contractsDir": "contracts"}';
+    });
+
+    it("should handle discover_skills", async () => {
+      const response = await callToolHandler({
+        method: "tools/call",
+        params: {
+          name: "discover_skills",
+          arguments: {},
+        },
+      });
+      expect(response.isError).toBeUndefined();
+      const content = JSON.parse(response.content[0].text);
+      expect(Array.isArray(content)).toBe(true);
+      expect(content.length).toBeGreaterThan(0);
+      expect(content[0].skill).toBeDefined();
+    });
+
+    it("should handle get_pricing", async () => {
+      const response = await callToolHandler({
+        method: "tools/call",
+        params: {
+          name: "get_pricing",
+          arguments: {},
+        },
+      });
+      expect(response.isError).toBeUndefined();
+      const content = JSON.parse(response.content[0].text);
+      expect(content.generate_contract).toBeDefined();
+    });
+
+    it("should handle discover_agents", async () => {
+      const response = await callToolHandler({
+        method: "tools/call",
+        params: {
+          name: "discover_agents",
+          arguments: {},
+        },
+      });
+      expect(response.isError).toBeUndefined();
+      const content = JSON.parse(response.content[0].text);
+      expect(content["monadforge-ai"]).toBeDefined();
+    });
+
+    it("should handle invoke_agent for remote mock simulation", async () => {
+      const { AgentRouter } = require("@monadforge/agent");
+      AgentRouter.registerAgent("some-other-agent", {
+        agentId: "some-other-agent",
+        pricing: {
+          "search_docs": { price: "0.0", token: "MON" }
+        }
+      });
+      const response = await callToolHandler({
+        method: "tools/call",
+        params: {
+          name: "invoke_agent",
+          arguments: {
+            targetAgentId: "some-other-agent",
+            skillName: "search_docs",
+            params: { query: "parallel evm" }
+          },
+        },
+      });
+      expect(response.isError).toBeUndefined();
+      const content = JSON.parse(response.content[0].text);
+      expect(content.status).toBe("success");
+      expect(content.output.agentId).toBe("some-other-agent");
+    });
+
+    it("should handle execute_skill for free local skill", async () => {
+      const response = await callToolHandler({
+        method: "tools/call",
+        params: {
+          name: "execute_skill",
+          arguments: {
+            skillName: "search_docs",
+            params: { query: "monad parallel" }
+          },
+        },
+      });
+      expect(response.isError).toBeUndefined();
+    });
+
+    it("should reject execute_skill requiring payment when payment details are missing", async () => {
+      const response = await callToolHandler({
+        method: "tools/call",
+        params: {
+          name: "execute_skill",
+          arguments: {
+            skillName: "run_audit",
+            params: { code: "contract X {}" }
+          },
+        },
+      });
+      expect(response.isError).toBe(true);
+      expect(response.content[0].text).toContain("requires payment");
     });
 
     it("should reject unknown tool name", async () => {

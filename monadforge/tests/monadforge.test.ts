@@ -271,4 +271,41 @@ describe("MonadForge AI Wrapper exports tests", () => {
     const reviewRes = await monadforge.tools.review({ "Token.sol": "contract Token {}" });
     expect(reviewRes).toBeDefined();
   });
+
+  it("should perform agent operations", async () => {
+    expect(monadforge.agent).toBeDefined();
+    
+    const manifest = monadforge.agent.getManifest();
+    expect(manifest.agentId).toBe("monadforge-ai");
+
+    const pkgs = monadforge.agent.getSkillPackages();
+    expect(pkgs.length).toBeGreaterThan(0);
+
+    const pricing = monadforge.agent.getPricingManifest();
+    expect(pricing.run_audit).toBeDefined();
+
+    const reputation = monadforge.agent.getReputation();
+    expect(reputation.score).toBeDefined();
+
+    monadforge.agent.registerAgent("other-agent", { agentId: "other-agent", pricing: { "search_docs": { price: "0.0", token: "MON" } } });
+    
+    const invokeRes = await monadforge.agent.invokeAgent("other-agent", "search_docs", { query: "test" });
+    expect(invokeRes.status).toBe("success");
+
+    monadforge.agent.recordExecution({
+      agentId: "monadforge-ai",
+      skillName: "search_docs",
+      durationMs: 100,
+      status: "success"
+    });
+
+    const history = monadforge.agent.getExecutionHistory("monadforge-ai");
+    expect(history.length).toBeGreaterThan(0);
+
+    const executor = monadforge.agent.createExecutor();
+    expect(executor).toBeDefined();
+
+    const adapter = monadforge.agent.createMockPaymentAdapter();
+    expect(adapter).toBeDefined();
+  });
 });

@@ -1,0 +1,123 @@
+{
+  "$ref": "#/definitions/skill_package",
+  "definitions": {
+    "skill_package": {
+      "type": "object",
+      "properties": {
+        "skill": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "inputs": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "object"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "required": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "properties"
+              ],
+              "additionalProperties": false
+            },
+            "outputs": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "object"
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "required": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "properties"
+              ],
+              "additionalProperties": false
+            },
+            "pricing": {
+              "type": "object",
+              "properties": {
+                "price": {
+                  "type": "string"
+                },
+                "token": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "price",
+                "token"
+              ],
+              "additionalProperties": false
+            },
+            "permissions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "executionRequirements": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "name",
+            "version",
+            "description",
+            "inputs",
+            "outputs"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "skill",
+        "version",
+        "category",
+        "schema"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

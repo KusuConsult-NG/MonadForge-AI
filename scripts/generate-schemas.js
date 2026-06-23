@@ -23,6 +23,8 @@ const {
   RepairSchema,
   DeploymentResultSchema,
   ExecutionTraceSchema,
+  SkillPackageSchema,
+  AgentManifestSchema,
 } = sdkSchemas;
 
 const schemas = [
@@ -32,6 +34,8 @@ const schemas = [
   { name: 'repair.schema.json', schema: RepairSchema },
   { name: 'deployment.schema.json', schema: DeploymentResultSchema },
   { name: 'trace.schema.json', schema: ExecutionTraceSchema },
+  { name: 'skill_package.schema.json', schema: SkillPackageSchema },
+  { name: 'agent_manifest.schema.json', schema: AgentManifestSchema },
 ];
 
 for (const s of schemas) {
