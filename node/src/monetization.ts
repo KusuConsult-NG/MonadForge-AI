@@ -103,6 +103,7 @@ export class EthersPaymentAdapter implements PaymentAdapter {
   >();
   private provider: ethers.JsonRpcProvider | null = null;
   private verifiedTxHashes = new Set<string>();
+  private rpcIndex = 0;
 
   constructor(provider?: ethers.JsonRpcProvider) {
     if (provider) {
@@ -120,7 +121,8 @@ export class EthersPaymentAdapter implements PaymentAdapter {
       ? envUrls.split(",").map((u) => u.trim()).filter(Boolean)
       : [config.MONAD_RPC_URL, config.MONAD_RPC_URL_FALLBACK];
 
-    this.provider = new ethers.JsonRpcProvider(urls[0]);
+    const url = urls[this.rpcIndex % urls.length];
+    this.provider = new ethers.JsonRpcProvider(url);
     return this.provider;
   }
 
@@ -313,6 +315,8 @@ export class EthersPaymentAdapter implements PaymentAdapter {
         `Error during on-chain verification for charge ${chargeId}`,
         err,
       );
+      this.provider = null;
+      this.rpcIndex++;
       try {
         const config = getConfig();
         const envUrls = process.env.MONAD_RPC_URLS;

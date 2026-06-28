@@ -122,12 +122,27 @@ export class NodeServer {
               }
 
               // Parse payload
-              const payload = JSON.parse(body);
+              let payload: any;
+              try {
+                payload = JSON.parse(body);
+              } catch (e: any) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "Invalid JSON format in request body" }));
+                return;
+              }
+
+              if (!payload || typeof payload !== "object") {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "Invalid JSON payload structure" }));
+                return;
+              }
+
               const { skillName, params, paymentDetails, timestamp } = payload;
 
               // Validate request age (prevent replay attacks: configurable drift margin, default 5 minutes)
               const maxDriftEnv = process.env.MAX_CLOCK_DRIFT_MS;
-              const maxDrift = maxDriftEnv ? parseInt(maxDriftEnv, 10) : 300000;
+              const maxDriftVal = maxDriftEnv ? parseInt(maxDriftEnv, 10) : 300000;
+              const maxDrift = isNaN(maxDriftVal) ? 300000 : maxDriftVal;
               const requestTime = parseInt(timestamp, 10);
               const currentTime = Date.now();
               if (

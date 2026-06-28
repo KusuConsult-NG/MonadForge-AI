@@ -1437,6 +1437,54 @@ describe("Node Package Unit Tests", () => {
       delete process.env.AGENT_REGISTRY_ADDRESS;
     });
 
+    it("should rotate and recover providers upon connection failures in EthersPaymentAdapter", async () => {
+      process.env.MONAD_RPC_URLS = "https://failing-rpc-1.com,https://failing-rpc-2.com,https://working-rpc-3.com";
+      require("@monadforge/sdk").resetConfigForTesting();
+
+      const rotateAdapter = new EthersPaymentAdapter();
+      const chargeId = await rotateAdapter.createCharge("run_audit", "1.0", "MON");
+
+      const provider1 = rotateAdapter["getProvider"]();
+      expect(((provider1 as any)._getConnection() as any).url).toContain("failing-rpc-1.com");
+
+      const mockFallbackGetTx = jest.fn().mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        value: ethers.parseEther("1.0"),
+      });
+      const mockFallbackGetReceipt = jest.fn().mockResolvedValue({
+        status: 1,
+      });
+
+      const getTxSpy = jest.spyOn(ethers.JsonRpcProvider.prototype, "getTransaction")
+        .mockImplementation(function (this: ethers.JsonRpcProvider, hash: string) {
+          const url = (this as any)._getConnection().url;
+          if (url.includes("failing-rpc-1.com")) {
+            return Promise.reject(new Error("RPC failed"));
+          }
+          return mockFallbackGetTx(hash);
+        });
+
+      const getReceiptSpy = jest.spyOn(ethers.JsonRpcProvider.prototype, "getTransactionReceipt")
+        .mockImplementation(function (this: ethers.JsonRpcProvider, hash: string) {
+          const url = (this as any)._getConnection().url;
+          if (url.includes("failing-rpc-1.com")) {
+            return Promise.reject(new Error("RPC failed"));
+          }
+          return mockFallbackGetReceipt(hash);
+        });
+
+      const success = await rotateAdapter.verifyPayment(chargeId, "0xhash");
+      expect(success).toBe(true);
+
+      const provider2 = rotateAdapter["getProvider"]();
+      expect(((provider2 as any)._getConnection() as any).url).toContain("failing-rpc-2.com");
+
+      getTxSpy.mockRestore();
+      getReceiptSpy.mockRestore();
+      delete process.env.MONAD_RPC_URLS;
+      require("@monadforge/sdk").resetConfigForTesting();
+    });
+
     afterAll(() => {
       delete process.env.PAYMENT_RECEIVER_ADDRESS;
       delete process.env.DEPLOYER_PRIVATE_KEY;

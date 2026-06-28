@@ -277,37 +277,33 @@ describe("MemoryEngine Unit Tests", () => {
   });
 
   it("should rotate trace files if trace count exceeds 100", async () => {
-    const traceDir = path.resolve(process.cwd(), ".monadforge", "traces");
-    await fs.promises.mkdir(traceDir, { recursive: true });
+    const fsLib = require("fs");
+    const mockFiles = Array.from({ length: 102 }, (_, i) => `trace_2026-06-28-09-00-00_${i}_rotation-proj.json`);
+    const readdirSpy = jest.spyOn(fsLib.promises, "readdir").mockResolvedValue(mockFiles as any);
+    const statSpy = jest.spyOn(fsLib.promises, "stat").mockResolvedValue({ mtimeMs: 100 } as any);
+    const unlinkSpy = jest.spyOn(fsLib.promises, "unlink").mockResolvedValue(undefined as any);
+    const writeSpy = jest.spyOn(fsLib.promises, "writeFile").mockResolvedValue(undefined as any);
 
-    // Clean it up first
-    const existing = await fs.promises.readdir(traceDir);
-    for (const file of existing) {
-      await fs.promises.unlink(path.join(traceDir, file)).catch(() => {});
-    }
+    const mockTrace = {
+      traceId: "tr_test_rot",
+      projectId: "rotation-proj",
+      timestamp: new Date().toISOString(),
+      intent: { type: "generate", domain: "erc20", params: {} },
+      plan: { steps: [] },
+      stepsExecuted: [],
+      repairs: [],
+      deployments: [],
+      finalStatus: "success",
+    };
 
-    // Write 102 trace files with different timestamps
-    for (let i = 0; i < 102; i++) {
-      const mockTrace = {
-        traceId: `tr_test_${i}`,
-        projectId: `rotation-proj-${i}`,
-        timestamp: new Date(Date.now() + i * 1000).toISOString(),
-        intent: { type: "generate", domain: "erc20", params: {} },
-        plan: { steps: [] },
-        stepsExecuted: [],
-        repairs: [],
-        deployments: [],
-        finalStatus: "success",
-      };
-      await engine.saveExecutionTrace(`rotation-proj-${i}`, mockTrace);
-    }
+    await engine.saveExecutionTrace("rotation-proj", mockTrace);
 
-    const files = await fs.promises.readdir(traceDir);
-    expect(files.length).toBe(100);
+    expect(readdirSpy).toHaveBeenCalled();
+    expect(unlinkSpy).toHaveBeenCalledTimes(2);
 
-    // Clean up
-    for (const file of files) {
-      await fs.promises.unlink(path.join(traceDir, file)).catch(() => {});
-    }
+    readdirSpy.mockRestore();
+    statSpy.mockRestore();
+    unlinkSpy.mockRestore();
+    writeSpy.mockRestore();
   });
 });

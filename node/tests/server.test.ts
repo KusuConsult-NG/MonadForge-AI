@@ -362,4 +362,38 @@ describe("Node HTTP Server & Client Tests", () => {
     const data = await response.json();
     expect(data.error).toContain("Payload Too Large");
   });
+
+  it("should reject POST /invoke with 400 Bad Request if JSON is malformed", async () => {
+    const malformedBody = "{ malformed json }";
+    const sig = await wallet.signMessage(malformedBody);
+    const response = await fetch(`http://localhost:${testPort}/invoke`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Node-Sender": wallet.address,
+        "X-Node-Signature": sig,
+      },
+      body: malformedBody,
+    });
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toContain("Invalid JSON format");
+  });
+
+  it("should reject POST /invoke with 400 Bad Request if payload is not an object", async () => {
+    const nonObjectBody = '"just a string"';
+    const sig = await wallet.signMessage(nonObjectBody);
+    const response = await fetch(`http://localhost:${testPort}/invoke`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Node-Sender": wallet.address,
+        "X-Node-Signature": sig,
+      },
+      body: nonObjectBody,
+    });
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toContain("Invalid JSON payload structure");
+  });
 });
