@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract AgentVerifier {
+    function verifyAttestation(
+        string calldata agentId,
+        string calldata skillName,
+        uint256 timestamp,
+        bytes32 outputHash,
+        bytes calldata signature,
+        address agentAddress
+    ) external pure returns (bool) {
+        bytes32 messageHash = keccak256(abi.encodePacked(agentId, skillName, timestamp, outputHash));
+        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+        return recoverSigner(ethSignedMessageHash, signature) == agentAddress;
+    }
+
+    function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature) public pure returns (address) {
+        (bytes32 r, bytes32 s, uint8 v) = splitSignature(_signature);
+        return ecrecover(_ethSignedMessageHash, v, r, s);
+    }
+
+    function splitSignature(bytes memory sig) public pure returns (bytes32 r, bytes32 s, uint8 v) {
+        require(sig.length == 65, "invalid signature length");
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+    }
+}

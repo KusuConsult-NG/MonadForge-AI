@@ -1,4 +1,8 @@
-import { createLogger, MemorySchema, ExecutionTraceSchema } from "@monadforge/sdk";
+import {
+  createLogger,
+  MemorySchema,
+  ExecutionTraceSchema,
+} from "@monadforge/sdk";
 import * as fs from "fs";
 import * as path from "path";
 

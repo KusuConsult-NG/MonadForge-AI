@@ -20,14 +20,20 @@ export class TemplateEngine implements ITemplateEngine {
 
     switch (normalizedType) {
       case "erc20":
-        return this.generateERC20(name, symbol, options?.supply || "1000000", options?.upgradeable);
+        return this.generateERC20(
+          name,
+          symbol,
+          options?.supply || "1000000",
+          options?.upgradeable,
+        );
       case "erc721":
         return this.generateERC721(name, symbol);
       case "erc1155":
         return this.generateERC1155(
           name,
           symbol,
-          options?.uri || `https://api.monadforge.json/${name.toLowerCase()}/{id}`,
+          options?.uri ||
+            `https://api.monadforge.json/${name.toLowerCase()}/{id}`,
         );
       case "staking":
         return this.generateStaking(

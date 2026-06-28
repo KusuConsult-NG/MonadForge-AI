@@ -34,7 +34,10 @@ export class AuditEngine implements IAuditEngine {
       this.runASTAudit(ast, contractSource, issues);
     } catch (err: any) {
       // 2. Fall back to regex parsing on syntax errors
-      logger.warn("Solidity AST parsing failed. Falling back to regex-based heuristics.", err);
+      logger.warn(
+        "Solidity AST parsing failed. Falling back to regex-based heuristics.",
+        err,
+      );
       this.runRegexAudit(contractSource, issues);
     }
 
@@ -87,7 +90,8 @@ export class AuditEngine implements IAuditEngine {
               category: "Integer Overflow",
               title: "Outdated Compiler Version (Integer Overflow Risk)",
               description: `The contract uses compiler version ${versionString}. Solidity versions below 0.8.0 do not have overflow checks enabled by default.`,
-              recommendation: "Upgrade to Solidity 0.8.0 or newer, or use OpenZeppelin SafeMath library.",
+              recommendation:
+                "Upgrade to Solidity 0.8.0 or newer, or use OpenZeppelin SafeMath library.",
             });
           }
         }
@@ -100,8 +104,10 @@ export class AuditEngine implements IAuditEngine {
         severity: "Medium",
         category: "Syntax validation",
         title: "Missing Compiler Pragma Directive",
-        description: "No pragma solidity version defined in the contract source code.",
-        recommendation: 'Add "pragma solidity ^0.8.20;" at the top of your Solidity files.',
+        description:
+          "No pragma solidity version defined in the contract source code.",
+        recommendation:
+          'Add "pragma solidity ^0.8.20;" at the top of your Solidity files.',
       });
     }
 
@@ -109,7 +115,14 @@ export class AuditEngine implements IAuditEngine {
     visit(ast, {
       FunctionDefinition(node) {
         if (node.isConstructor || !node.name) return;
-        const sensitiveNames = ["mint", "burn", "withdraw", "pause", "transferownership", "setreward"];
+        const sensitiveNames = [
+          "mint",
+          "burn",
+          "withdraw",
+          "pause",
+          "transferownership",
+          "setreward",
+        ];
         const isSensitive = sensitiveNames.some((name) =>
           node.name!.toLowerCase().includes(name),
         );
@@ -132,7 +145,8 @@ export class AuditEngine implements IAuditEngine {
               category: "Access Control",
               title: `Unprotected Sensitive Function: ${node.name}`,
               description: `The function "${node.name}" is marked public or external but does not appear to contain access control modifiers like "onlyOwner" or "onlyRole".`,
-              recommendation: "Add appropriate access control modifiers or internal authorization checks.",
+              recommendation:
+                "Add appropriate access control modifiers or internal authorization checks.",
             });
           }
         }
@@ -156,7 +170,11 @@ export class AuditEngine implements IAuditEngine {
                 const expr = getCallExpression(callNode.expression);
                 if (expr && expr.type === "MemberAccess") {
                   const mName = expr.memberName;
-                  if (mName === "call" || mName === "transfer" || mName === "send") {
+                  if (
+                    mName === "call" ||
+                    mName === "transfer" ||
+                    mName === "send"
+                  ) {
                     containsCall = true;
                   }
                 }
@@ -164,8 +182,8 @@ export class AuditEngine implements IAuditEngine {
             });
 
             if (containsCall) {
-              const hasGuardModifier = (funcNode.modifiers || []).some((mod: any) =>
-                mod.name.toLowerCase().includes("nonreentrant"),
+              const hasGuardModifier = (funcNode.modifiers || []).some(
+                (mod: any) => mod.name.toLowerCase().includes("nonreentrant"),
               );
 
               if (!hasReentrancyGuard || !hasGuardModifier) {
@@ -195,7 +213,10 @@ export class AuditEngine implements IAuditEngine {
                   }
                 },
                 BinaryOperation(binNode) {
-                  if (externalCallFound && ["=", "+=", "-="].includes(binNode.operator)) {
+                  if (
+                    externalCallFound &&
+                    ["=", "+=", "-="].includes(binNode.operator)
+                  ) {
                     issues.push({
                       id: "REENTRANCY-002",
                       severity: "Critical",
@@ -209,7 +230,10 @@ export class AuditEngine implements IAuditEngine {
                   }
                 },
                 UnaryOperation(unNode) {
-                  if (externalCallFound && ["++", "--"].includes(unNode.operator)) {
+                  if (
+                    externalCallFound &&
+                    ["++", "--"].includes(unNode.operator)
+                  ) {
                     issues.push({
                       id: "REENTRANCY-002",
                       severity: "Critical",
@@ -279,7 +303,8 @@ export class AuditEngine implements IAuditEngine {
                 title: "Authorization via tx.origin",
                 description:
                   "Using tx.origin for authorization checks makes the contract vulnerable to phishing attacks (reentrancy/caller spoofing via malicious contracts).",
-                recommendation: 'Replace "tx.origin" authorization checks with "msg.sender".',
+                recommendation:
+                  'Replace "tx.origin" authorization checks with "msg.sender".',
               });
             }
           }
@@ -510,7 +535,7 @@ export class AuditEngine implements IAuditEngine {
             usesChainlink = true;
           }
         }
-      }
+      },
     });
 
     if (usesGetReserves && !usesChainlink) {
@@ -519,8 +544,10 @@ export class AuditEngine implements IAuditEngine {
         severity: "High",
         category: "Oracle Price Manipulation",
         title: "Oracle Price Manipulation Risk (Spot Price Usage)",
-        description: "The contract calls \"getReserves\" directly to fetch pool states or calculate prices without using a Time-Weighted Average Price (TWAP) or decentralized oracle (e.g., Chainlink, Pyth). Spot price feeds from AMM pools are highly susceptible to flash-loan price manipulation attacks.",
-        recommendation: "Use a decentralized oracle (e.g. Chainlink, Pyth) or a Time-Weighted Average Price (TWAP) feed to prevent spot price manipulation attacks.",
+        description:
+          'The contract calls "getReserves" directly to fetch pool states or calculate prices without using a Time-Weighted Average Price (TWAP) or decentralized oracle (e.g., Chainlink, Pyth). Spot price feeds from AMM pools are highly susceptible to flash-loan price manipulation attacks.',
+        recommendation:
+          "Use a decentralized oracle (e.g. Chainlink, Pyth) or a Time-Weighted Average Price (TWAP) feed to prevent spot price manipulation attacks.",
       });
     }
 
@@ -540,20 +567,29 @@ export class AuditEngine implements IAuditEngine {
                   const left = binNode.left;
                   const right = binNode.right;
                   if (
-                    (left.type === "Identifier" && left.name === "msg.sender") ||
-                    (right.type === "Identifier" && right.name === "msg.sender") ||
-                    (left.type === "MemberAccess" && left.memberName === "sender" && (left.expression as any).name === "msg") ||
-                    (right.type === "MemberAccess" && right.memberName === "sender" && (right.expression as any).name === "msg")
+                    (left.type === "Identifier" &&
+                      left.name === "msg.sender") ||
+                    (right.type === "Identifier" &&
+                      right.name === "msg.sender") ||
+                    (left.type === "MemberAccess" &&
+                      left.memberName === "sender" &&
+                      (left.expression as any).name === "msg") ||
+                    (right.type === "MemberAccess" &&
+                      right.memberName === "sender" &&
+                      (right.expression as any).name === "msg")
                   ) {
                     checksMsgSender = true;
                   }
                 }
               },
               MemberAccess(memNode) {
-                if (memNode.memberName === "sender" && (memNode.expression as any).name === "msg") {
+                if (
+                  memNode.memberName === "sender" &&
+                  (memNode.expression as any).name === "msg"
+                ) {
                   checksMsgSender = true;
                 }
-              }
+              },
             });
           }
 
@@ -564,21 +600,25 @@ export class AuditEngine implements IAuditEngine {
               category: "Flash Loan Security",
               title: "Unprotected Flash Loan Callback",
               description: `The contract implements the flash loan callback function "${funcNode.name}" but does not verify that the sender (msg.sender) is the expected, trusted lending pool contract. Anyone can call this function to trigger internal logic or drain funds.`,
-              recommendation: "Add assertions or modifier checks to ensure the callback initiator is the trusted lending pool contract.",
+              recommendation:
+                "Add assertions or modifier checks to ensure the callback initiator is the trusted lending pool contract.",
             });
           }
         }
-      }
+      },
     });
 
     // 13. ECON-003 (Sandwich Attack Surface — swap without slippage/deadline guard)
     visit(ast, {
       FunctionDefinition(funcNode) {
         if (!funcNode.body) return;
-        const funcSrc = source.split("\n").slice(
-          (funcNode.loc?.start.line ?? 1) - 1,
-          (funcNode.loc?.end.line ?? 1),
-        ).join("\n");
+        const funcSrc = source
+          .split("\n")
+          .slice(
+            (funcNode.loc?.start.line ?? 1) - 1,
+            funcNode.loc?.end.line ?? 1,
+          )
+          .join("\n");
         const hasSwap =
           funcSrc.includes("swap") ||
           funcSrc.includes("swapExactTokensForTokens") ||
@@ -615,7 +655,11 @@ export class AuditEngine implements IAuditEngine {
               visit(funcNode.body, {
                 FunctionCall(callNode) {
                   const expr = getCallExpression(callNode.expression);
-                  if (expr && expr.type === "MemberAccess" && expr.memberName === "balanceOf") {
+                  if (
+                    expr &&
+                    expr.type === "MemberAccess" &&
+                    expr.memberName === "balanceOf"
+                  ) {
                     usesRawBalanceOf = true;
                   }
                 },
@@ -792,7 +836,8 @@ export class AuditEngine implements IAuditEngine {
           category: "Integer Overflow",
           title: "Outdated Compiler Version (Integer Overflow Risk)",
           description: `The contract uses compiler version ${versionString}. Solidity versions below 0.8.0 do not have overflow checks enabled by default.`,
-          recommendation: "Upgrade to Solidity 0.8.0 or newer, or use OpenZeppelin SafeMath library.",
+          recommendation:
+            "Upgrade to Solidity 0.8.0 or newer, or use OpenZeppelin SafeMath library.",
         });
       }
     } else {
@@ -801,24 +846,37 @@ export class AuditEngine implements IAuditEngine {
         severity: "Medium",
         category: "Syntax validation",
         title: "Missing Compiler Pragma Directive",
-        description: "No pragma solidity version defined in the contract source code.",
-        recommendation: 'Add "pragma solidity ^0.8.20;" at the top of your Solidity files.',
+        description:
+          "No pragma solidity version defined in the contract source code.",
+        recommendation:
+          'Add "pragma solidity ^0.8.20;" at the top of your Solidity files.',
       });
     }
 
     // 2. Access Control / Unprotected Sensitive Functions
     const stateChangingFuncs =
-      contractSource.match(/function\s+(\w+)\s*\([^)]*\)\s*(public|external)[^{]*/g) || [];
+      contractSource.match(
+        /function\s+(\w+)\s*\([^)]*\)\s*(public|external)[^{]*/g,
+      ) || [];
     for (const func of stateChangingFuncs) {
       const funcName = func.match(/function\s+(\w+)/)?.[1] || "";
-      const sensitiveNames = ["mint", "burn", "withdraw", "pause", "transferOwnership", "setReward"];
+      const sensitiveNames = [
+        "mint",
+        "burn",
+        "withdraw",
+        "pause",
+        "transferOwnership",
+        "setReward",
+      ];
       const isSensitive = sensitiveNames.some((name) =>
         funcName.toLowerCase().includes(name),
       );
 
       if (isSensitive) {
         const hasGuard =
-          func.includes("onlyOwner") || func.includes("onlyRole") || func.includes("hasRole");
+          func.includes("onlyOwner") ||
+          func.includes("onlyRole") ||
+          func.includes("hasRole");
         if (!hasGuard) {
           issues.push({
             id: "ACCESS-001",
@@ -826,7 +884,8 @@ export class AuditEngine implements IAuditEngine {
             category: "Access Control",
             title: `Unprotected Sensitive Function: ${funcName}`,
             description: `The function "${funcName}" is marked public or external but does not appear to contain access control modifiers like "onlyOwner" or "onlyRole".`,
-            recommendation: "Add appropriate access control modifiers or internal authorization checks.",
+            recommendation:
+              "Add appropriate access control modifiers or internal authorization checks.",
           });
         }
       }
@@ -868,10 +927,14 @@ export class AuditEngine implements IAuditEngine {
     }
 
     // 4. Dangerous Low-Level Calls
-    const uncheckedCallMatches = contractSource.match(/(\w+)\.call\{[^}]*\}/g) || [];
+    const uncheckedCallMatches =
+      contractSource.match(/(\w+)\.call\{[^}]*\}/g) || [];
     for (const match of uncheckedCallMatches) {
       const index = contractSource.indexOf(match);
-      const surroundingContext = contractSource.substring(Math.max(0, index - 20), index);
+      const surroundingContext = contractSource.substring(
+        Math.max(0, index - 20),
+        index,
+      );
       const isAssigned =
         surroundingContext.includes("bool") ||
         surroundingContext.includes("=") ||
@@ -892,7 +955,10 @@ export class AuditEngine implements IAuditEngine {
     }
 
     // 5. Gas Optimization
-    if (contractSource.includes("public") && !contractSource.includes("external")) {
+    if (
+      contractSource.includes("public") &&
+      !contractSource.includes("external")
+    ) {
       issues.push({
         id: "GAS-001",
         severity: "Informational",
@@ -919,18 +985,25 @@ export class AuditEngine implements IAuditEngine {
           title: "Authorization via tx.origin",
           description:
             "Using tx.origin for authorization checks makes the contract vulnerable to phishing attacks (reentrancy/caller spoofing via malicious contracts).",
-          recommendation: 'Replace "tx.origin" authorization checks with "msg.sender".',
+          recommendation:
+            'Replace "tx.origin" authorization checks with "msg.sender".',
         });
       }
     }
 
     // 7. Unsafe ERC20 Transfer
     const transferMatches =
-      contractSource.match(/(\w+|\))\.(transfer|transferFrom)\s*\([^)]*\)/g) || [];
+      contractSource.match(/(\w+|\))\.(transfer|transferFrom)\s*\([^)]*\)/g) ||
+      [];
     for (const match of transferMatches) {
       const index = contractSource.indexOf(match);
-      const surroundingBefore = contractSource.substring(Math.max(0, index - 30), index);
-      const isDecl = surroundingBefore.includes("function") || surroundingBefore.includes("event");
+      const surroundingBefore = contractSource.substring(
+        Math.max(0, index - 30),
+        index,
+      );
+      const isDecl =
+        surroundingBefore.includes("function") ||
+        surroundingBefore.includes("event");
       const isHandled =
         surroundingBefore.includes("require(") ||
         surroundingBefore.includes("if(") ||
@@ -953,7 +1026,10 @@ export class AuditEngine implements IAuditEngine {
     }
 
     // 8. block.timestamp Dependency
-    if (contractSource.includes("block.timestamp") || contractSource.includes(" now")) {
+    if (
+      contractSource.includes("block.timestamp") ||
+      contractSource.includes(" now")
+    ) {
       const randMatches =
         contractSource.match(
           /keccak256\s*\(\s*abi\.encodePacked\s*\([^)]*(block\.timestamp|now)[^)]*\)\)/g,
@@ -1009,7 +1085,9 @@ export class AuditEngine implements IAuditEngine {
         const argsStr = funcMatch[1];
         const bodyStr = funcMatch[2];
 
-        const args = argsStr.split(",").map((arg) => arg.trim().split(/\s+/).pop() || "");
+        const args = argsStr
+          .split(",")
+          .map((arg) => arg.trim().split(/\s+/).pop() || "");
         for (const arg of args) {
           if (arg && stateVars.includes(arg)) {
             issues.push({
@@ -1062,9 +1140,13 @@ export class AuditEngine implements IAuditEngine {
           continue;
         }
 
-        const args = argsStr.split(",").map((arg) => arg.trim().split(/\s+/).pop() || "");
+        const args = argsStr
+          .split(",")
+          .map((arg) => arg.trim().split(/\s+/).pop() || "");
         for (const varName of stateVars) {
-          const assignRegex = new RegExp(`\\b${varName}\\b\\s*(\\+=|-=|\\+\\+|--|=)(?![=])`);
+          const assignRegex = new RegExp(
+            `\\b${varName}\\b\\s*(\\+=|-=|\\+\\+|--|=)(?![=])`,
+          );
           if (assignRegex.test(bodyStr)) {
             const isLocalShadow =
               bodyStr.includes(`memory ${varName}`) ||
@@ -1088,14 +1170,19 @@ export class AuditEngine implements IAuditEngine {
     }
 
     // 11. ECON-001 (Oracle manipulation check)
-    if (contractSource.includes("getReserves") && !contractSource.includes("latestRoundData")) {
+    if (
+      contractSource.includes("getReserves") &&
+      !contractSource.includes("latestRoundData")
+    ) {
       issues.push({
         id: "ECON-001",
         severity: "High",
         category: "Oracle Price Manipulation",
         title: "Oracle Price Manipulation Risk (Spot Price Usage)",
-        description: "The contract calls \"getReserves\" directly to fetch pool states or calculate prices without using a Time-Weighted Average Price (TWAP) or decentralized oracle (e.g., Chainlink, Pyth). Spot price feeds from AMM pools are highly susceptible to flash-loan price manipulation attacks.",
-        recommendation: "Use a decentralized oracle (e.g. Chainlink, Pyth) or a Time-Weighted Average Price (TWAP) feed to prevent spot price manipulation attacks.",
+        description:
+          'The contract calls "getReserves" directly to fetch pool states or calculate prices without using a Time-Weighted Average Price (TWAP) or decentralized oracle (e.g., Chainlink, Pyth). Spot price feeds from AMM pools are highly susceptible to flash-loan price manipulation attacks.',
+        recommendation:
+          "Use a decentralized oracle (e.g. Chainlink, Pyth) or a Time-Weighted Average Price (TWAP) feed to prevent spot price manipulation attacks.",
       });
     }
 
@@ -1111,17 +1198,32 @@ export class AuditEngine implements IAuditEngine {
           severity: "Critical",
           category: "Flash Loan Security",
           title: "Unprotected Flash Loan Callback",
-          description: "The contract implements a flash loan callback function but does not verify that the sender (msg.sender) is the expected, trusted lending pool contract. Anyone can call this function to trigger internal logic or drain funds.",
-          recommendation: "Add assertions or modifier checks to ensure the callback initiator is the trusted lending pool contract.",
+          description:
+            "The contract implements a flash loan callback function but does not verify that the sender (msg.sender) is the expected, trusted lending pool contract. Anyone can call this function to trigger internal logic or drain funds.",
+          recommendation:
+            "Add assertions or modifier checks to ensure the callback initiator is the trusted lending pool contract.",
         });
       }
     }
 
     // 13. ECON-003 (Sandwich attack — swap without slippage/deadline)
-    const swapKeywords = ["swap", "swapExactTokensForTokens", "exactInputSingle"];
-    const slippageKeywords = ["amountOutMin", "minAmountOut", "sqrtPriceLimitX96", "deadline"];
-    const hasSwapInSource = swapKeywords.some((k) => contractSource.includes(k));
-    const hasSlippageInSource = slippageKeywords.some((k) => contractSource.includes(k));
+    const swapKeywords = [
+      "swap",
+      "swapExactTokensForTokens",
+      "exactInputSingle",
+    ];
+    const slippageKeywords = [
+      "amountOutMin",
+      "minAmountOut",
+      "sqrtPriceLimitX96",
+      "deadline",
+    ];
+    const hasSwapInSource = swapKeywords.some((k) =>
+      contractSource.includes(k),
+    );
+    const hasSlippageInSource = slippageKeywords.some((k) =>
+      contractSource.includes(k),
+    );
     if (hasSwapInSource && !hasSlippageInSource) {
       issues.push({
         id: "ECON-003",
@@ -1176,7 +1278,10 @@ export class AuditEngine implements IAuditEngine {
 
     if (isUpgradeableSource) {
       // UPGRADE-001 (Constructor check)
-      if (contractSource.includes("constructor") && !contractSource.includes("_disableInitializers")) {
+      if (
+        contractSource.includes("constructor") &&
+        !contractSource.includes("_disableInitializers")
+      ) {
         issues.push({
           id: "UPGRADE-001",
           severity: "Critical",
@@ -1190,7 +1295,8 @@ export class AuditEngine implements IAuditEngine {
       }
 
       // UPGRADE-002 (State Variable Initialization)
-      const varInitRegex = /(uint256|uint128|uint64|uint32|uint|int256|int128|int|address|string|bool)\s+(?!constant|immutable)(public|private|internal)?\s*\w+\s*=\s*[^;]+;/;
+      const varInitRegex =
+        /(uint256|uint128|uint64|uint32|uint|int256|int128|int|address|string|bool)\s+(?!constant|immutable)(public|private|internal)?\s*\w+\s*=\s*[^;]+;/;
       if (varInitRegex.test(contractSource)) {
         issues.push({
           id: "UPGRADE-002",
@@ -1205,7 +1311,10 @@ export class AuditEngine implements IAuditEngine {
       }
 
       // UPGRADE-003 (selfdestruct / delegatecall check)
-      if (contractSource.includes("selfdestruct") || contractSource.includes("suicide")) {
+      if (
+        contractSource.includes("selfdestruct") ||
+        contractSource.includes("suicide")
+      ) {
         issues.push({
           id: "UPGRADE-003",
           severity: "Critical",

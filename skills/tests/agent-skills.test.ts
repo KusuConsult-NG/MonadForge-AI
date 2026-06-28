@@ -174,7 +174,10 @@ describe("AgentSkills Unit Tests", () => {
 
     it("should handle verification failure in deploy_contract skill routing gracefully", async () => {
       const verifySpy = jest
-        .spyOn((agentSkills as any).actionLayer.deploymentEngine, "verifyDeployment")
+        .spyOn(
+          (agentSkills as any).actionLayer.deploymentEngine,
+          "verifyDeployment",
+        )
         .mockRejectedValueOnce(new Error("Verification endpoint offline"));
 
       const res = await agentSkills.route("deploy_contract", {});

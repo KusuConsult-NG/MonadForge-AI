@@ -164,15 +164,21 @@ export class RepairEngine {
           }
         }
       }
- 
+
       if (
         issue.includes("MONAD-001") ||
         issue.includes("Parallel EVM Storage Slot Contention")
       ) {
         // Match wider set of integer types that could be contention points
-        const stateVarRegex = /(uint256|uint128|uint64|uint32|uint|int256|int128|int)\s+(public\s+|private\s+|internal\s+)?(\w+)\s*;/g;
+        const stateVarRegex =
+          /(uint256|uint128|uint64|uint32|uint|int256|int128|int)\s+(public\s+|private\s+|internal\s+)?(\w+)\s*;/g;
         let match;
-        const variablesToProcess: Array<{ type: string; visibility: string; name: string; fullMatch: string }> = [];
+        const variablesToProcess: Array<{
+          type: string;
+          visibility: string;
+          name: string;
+          fullMatch: string;
+        }> = [];
         stateVarRegex.lastIndex = 0;
 
         while ((match = stateVarRegex.exec(fixedCode)) !== null) {
@@ -184,31 +190,62 @@ export class RepairEngine {
           });
         }
 
-        for (const { type, visibility, name, fullMatch } of variablesToProcess) {
+        for (const {
+          type,
+          visibility,
+          name,
+          fullMatch,
+        } of variablesToProcess) {
           if (fixedCode.includes(`${name}Partition`)) {
             continue;
           }
 
-          const incrementRegex = new RegExp(`\\b${name}\\s*(\\+\\+|--|\\+=|-=|=)`);
+          const incrementRegex = new RegExp(
+            `\\b${name}\\s*(\\+\\+|--|\\+=|-=|=)`,
+          );
           if (incrementRegex.test(fixedCode)) {
             const newVarDef = `mapping(address => ${type}) ${visibility}${name}Partition;`;
             fixedCode = fixedCode.replace(fullMatch, newVarDef);
 
             const unOpRegex = new RegExp(`\\b${name}\\s*(\\+\\+|--)`, "g");
-            fixedCode = fixedCode.replace(unOpRegex, `${name}Partition[msg.sender]$1`);
+            fixedCode = fixedCode.replace(
+              unOpRegex,
+              `${name}Partition[msg.sender]$1`,
+            );
 
-            const binOpRegex = new RegExp(`\\b${name}\\s*(\\+=|-=|\\*=|\\/=)\\s*([^;]+);`, "g");
-            fixedCode = fixedCode.replace(binOpRegex, `${name}Partition[msg.sender] $1 $2;`);
+            const binOpRegex = new RegExp(
+              `\\b${name}\\s*(\\+=|-=|\\*=|\\/=)\\s*([^;]+);`,
+              "g",
+            );
+            fixedCode = fixedCode.replace(
+              binOpRegex,
+              `${name}Partition[msg.sender] $1 $2;`,
+            );
 
-            const assignRegex = new RegExp(`\\b${name}\\s*=\\s*([^;=+\\-*/]+);`, "g");
-            fixedCode = fixedCode.replace(assignRegex, `${name}Partition[msg.sender] = $1;`);
+            const assignRegex = new RegExp(
+              `\\b${name}\\s*=\\s*([^;=+\\-*/]+);`,
+              "g",
+            );
+            fixedCode = fixedCode.replace(
+              assignRegex,
+              `${name}Partition[msg.sender] = $1;`,
+            );
 
             // Fix emit Event(..., name, ...) and return name references
-            const emitRegex = new RegExp(`(emit\\s+\\w+\\s*\\([^)]*?)\\b${name}\\b([^)]*?\\))`, "g");
-            fixedCode = fixedCode.replace(emitRegex, `$1${name}Partition[msg.sender]$2`);
+            const emitRegex = new RegExp(
+              `(emit\\s+\\w+\\s*\\([^)]*?)\\b${name}\\b([^)]*?\\))`,
+              "g",
+            );
+            fixedCode = fixedCode.replace(
+              emitRegex,
+              `$1${name}Partition[msg.sender]$2`,
+            );
 
             const returnRegex = new RegExp(`return\\s+${name}\\s*;`, "g");
-            fixedCode = fixedCode.replace(returnRegex, `return ${name}Partition[msg.sender];`);
+            fixedCode = fixedCode.replace(
+              returnRegex,
+              `return ${name}Partition[msg.sender];`,
+            );
 
             fixDescriptions.push(
               `Partitioned state variable ${name} (${type}) into address mapping to resolve Parallel EVM storage slot contention`,
@@ -228,7 +265,9 @@ export class RepairEngine {
             contractRegex,
             `$1\n\n    // TODO: Integrate a TWAP or Chainlink oracle instead of spot getReserves()\n    // See: https://docs.chain.link/data-feeds\n    address public trustedOracle;\n    modifier requireTWAP() {\n        require(trustedOracle != address(0), "Oracle not configured");\n        _;\n    }`,
           );
-          fixDescriptions.push("Injected trustedOracle address + requireTWAP modifier stub (ECON-001)");
+          fixDescriptions.push(
+            "Injected trustedOracle address + requireTWAP modifier stub (ECON-001)",
+          );
         }
       }
 
@@ -237,13 +276,20 @@ export class RepairEngine {
         issue.includes("Unprotected Flash Loan Callback")
       ) {
         // Inject caller check into flash-loan callback functions
-        const callbackNames = ["executeOperation", "onFlashLoan", "uniswapV2Call"];
+        const callbackNames = [
+          "executeOperation",
+          "onFlashLoan",
+          "uniswapV2Call",
+        ];
         for (const cbName of callbackNames) {
           const cbRegex = new RegExp(
             `(function\\s+${cbName}\\s*\\([^)]*\\)[^{]*\\{)`,
             "g",
           );
-          if (cbRegex.test(fixedCode) && !fixedCode.includes(`${cbName}`) === false) {
+          if (
+            cbRegex.test(fixedCode) &&
+            !fixedCode.includes(`${cbName}`) === false
+          ) {
             fixedCode = fixedCode.replace(
               new RegExp(`(function\\s+${cbName}\\s*\\([^)]*\\)[^{]*\\{)`),
               `$1\n        require(msg.sender == trustedPool, "Unauthorized flash loan callback");`,
@@ -254,7 +300,9 @@ export class RepairEngine {
                 "$1\n    address public trustedPool;",
               );
             }
-            fixDescriptions.push(`Injected msg.sender caller guard into ${cbName} (ECON-002)`);
+            fixDescriptions.push(
+              `Injected msg.sender caller guard into ${cbName} (ECON-002)`,
+            );
           }
         }
       }
@@ -263,20 +311,25 @@ export class RepairEngine {
         issue.includes("UPGRADE-001") ||
         issue.includes("Unsafe Constructor")
       ) {
-        const constructorRegex = /constructor\s*\([^)]*\)\s*\{[^{}]*(\{[^{}]*\}[^{}]*)*\}/g;
+        const constructorRegex =
+          /constructor\s*\([^)]*\)\s*\{[^{}]*(\{[^{}]*\}[^{}]*)*\}/g;
         if (constructorRegex.test(fixedCode)) {
           fixedCode = fixedCode.replace(
             constructorRegex,
             `/// @custom:oz-upgrades-unsafe-allow constructor\n    constructor() {\n        _disableInitializers();\n    }`,
           );
-          fixDescriptions.push("Replaced unsafe constructor with _disableInitializers()");
+          fixDescriptions.push(
+            "Replaced unsafe constructor with _disableInitializers()",
+          );
         } else {
           const contractRegex = /(contract\s+\w+[^{]*\{)/;
           fixedCode = fixedCode.replace(
             contractRegex,
             `$1\n\n    /// @custom:oz-upgrades-unsafe-allow constructor\n    constructor() {\n        _disableInitializers();\n    }`,
           );
-          fixDescriptions.push("Injected constructor calling _disableInitializers()");
+          fixDescriptions.push(
+            "Injected constructor calling _disableInitializers()",
+          );
         }
       }
 
@@ -330,7 +383,10 @@ export class RepairEngine {
             fixedCode = fixedCode.replace(contractRegex, `$1${initFunction}`);
 
             if (!fixedCode.includes("Initializable")) {
-              if (fixedCode.includes("contract ") && fixedCode.includes(" is ")) {
+              if (
+                fixedCode.includes("contract ") &&
+                fixedCode.includes(" is ")
+              ) {
                 fixedCode = fixedCode.replace(
                   /(contract\s+\w+\s+is\s+)/,
                   "$1Initializable, ",

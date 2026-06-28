@@ -47,7 +47,8 @@ describe("Explainability Engine", () => {
       repairs: [
         {
           issues: ["Reentrancy risk in withdraw()", "Missing access control"],
-          explanation: "Added ReentrancyGuard and onlyOwner modifier to sensitive functions.",
+          explanation:
+            "Added ReentrancyGuard and onlyOwner modifier to sensitive functions.",
           originalCode: "contract Staking {}",
           repairedCode: "contract Staking is ReentrancyGuard {}",
         },
@@ -71,18 +72,36 @@ describe("Explainability Engine", () => {
     expect(rationale).toContain("**Project:** `project-abc`");
     expect(rationale).toContain("**Timestamp:** `2026-06-23T09:00:00Z`");
     expect(rationale).toContain("**Final Status:** ✅ Success");
-    expect(rationale).toContain("The agent parsed a **deploy** intent targeting the **STAKING** domain.");
+    expect(rationale).toContain(
+      "The agent parsed a **deploy** intent targeting the **STAKING** domain.",
+    );
     expect(rationale).toContain("Developer constraints specified:");
     expect(rationale).toContain("- Must use ReentrancyGuard");
     expect(rationale).toContain("- Solidity version 0.8.20");
-    expect(rationale).toContain("The planning engine generated a topological composition of **3 steps**:");
-    expect(rationale).toContain("1. **[generate_contract]** Generate staking smart contract (Status: *completed*)");
-    expect(rationale).toContain("The self-healing engine executed **1 repair operations**:");
-    expect(rationale).toContain("**Issues Diagnosed:** Reentrancy risk in withdraw(); Missing access control");
-    expect(rationale).toContain("**Rationale:** Added ReentrancyGuard and onlyOwner modifier to sensitive functions.");
-    expect(rationale).toContain("**Contract Address:** `0xDePloYedContractAddResS0000000000000000123`");
-    expect(rationale).toContain("**Transaction Hash:** `0xTxHaSh00000000000000000000000000000000000123`");
-    expect(rationale).toContain("**Block Explorer Verification:** ✅ Verified (Verified on MonadSourcify)");
+    expect(rationale).toContain(
+      "The planning engine generated a topological composition of **3 steps**:",
+    );
+    expect(rationale).toContain(
+      "1. **[generate_contract]** Generate staking smart contract (Status: *completed*)",
+    );
+    expect(rationale).toContain(
+      "The self-healing engine executed **1 repair operations**:",
+    );
+    expect(rationale).toContain(
+      "**Issues Diagnosed:** Reentrancy risk in withdraw(); Missing access control",
+    );
+    expect(rationale).toContain(
+      "**Rationale:** Added ReentrancyGuard and onlyOwner modifier to sensitive functions.",
+    );
+    expect(rationale).toContain(
+      "**Contract Address:** `0xDePloYedContractAddResS0000000000000000123`",
+    );
+    expect(rationale).toContain(
+      "**Transaction Hash:** `0xTxHaSh00000000000000000000000000000000000123`",
+    );
+    expect(rationale).toContain(
+      "**Block Explorer Verification:** ✅ Verified (Verified on MonadSourcify)",
+    );
   });
 
   it("should generate minimal rationale for a failed trace with no intent, no plan steps, no repairs, and no deployments", () => {
@@ -101,7 +120,9 @@ describe("Explainability Engine", () => {
 
     expect(rationale).toContain("**Final Status:** ❌ Failed");
     expect(rationale).toContain("No structured intent was detected.");
-    expect(rationale).toContain("No security vulnerabilities or compilation failures were detected; no self-healing actions were necessary.");
+    expect(rationale).toContain(
+      "No security vulnerabilities or compilation failures were detected; no self-healing actions were necessary.",
+    );
     expect(rationale).toContain("No deployments were executed in this trace.");
   });
 
@@ -137,7 +158,9 @@ describe("Explainability Engine", () => {
 
     const rationale = generateExecutionReasoning(trace);
 
-    expect(rationale).toContain("The agent parsed a **audit** intent targeting the **TOKEN** domain.");
+    expect(rationale).toContain(
+      "The agent parsed a **audit** intent targeting the **TOKEN** domain.",
+    );
     expect(rationale).not.toContain("Developer constraints specified:");
     expect(rationale).toContain("**Issues Diagnosed:** Syntax error");
     expect(rationale).not.toContain("Rationale:");
@@ -166,6 +189,8 @@ describe("Explainability Engine", () => {
     };
 
     const rationale = generateExecutionReasoning(trace);
-    expect(rationale).toContain("**Block Explorer Verification:** ❌ Failed (Sourcify API offline)");
+    expect(rationale).toContain(
+      "**Block Explorer Verification:** ❌ Failed (Sourcify API offline)",
+    );
   });
 });

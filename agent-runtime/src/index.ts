@@ -180,9 +180,14 @@ export class AgentRuntimeEngine {
         const address = metadata.contractAddress || stepRes.contractAddress;
         if (address) {
           deployments.push({
-            contractName: stepRes.contractName || metadata.contractName || "Token",
+            contractName:
+              stepRes.contractName || metadata.contractName || "Token",
             contractAddress: address,
-            transactionHash: metadata.transactionHash || stepRes.transactionHash || stepRes.txHash || "0x",
+            transactionHash:
+              metadata.transactionHash ||
+              stepRes.transactionHash ||
+              stepRes.txHash ||
+              "0x",
             network: stepRes.network || metadata.network || "monad-testnet",
             timestamp: new Date().toISOString(),
           });
@@ -230,7 +235,7 @@ export class AgentRuntimeEngine {
         stepId: idx + 1,
         skillName: step.skill,
         input: step.params,
-        output: stepRes ? (stepRes.metadata || stepRes) : { status: "pending" },
+        output: stepRes ? stepRes.metadata || stepRes : { status: "pending" },
         durationMs: 100, // mock execution duration
         timestamp: new Date().toISOString(),
       });
@@ -277,7 +282,7 @@ export class AgentRuntimeEngine {
         description: `Execute ${step.skill} for step ${step.id}`,
         skillName: step.skill as any,
         params: step.params,
-        status: stepRes ? (stepRes.status || "completed") : "pending",
+        status: stepRes ? stepRes.status || "completed" : "pending",
       };
     });
 

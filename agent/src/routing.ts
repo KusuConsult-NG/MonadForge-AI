@@ -5,8 +5,6 @@ import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
 
-
-
 const logger = createLogger("Routing");
 
 export class AgentRouter {
@@ -31,7 +29,9 @@ export class AgentRouter {
         for (const [agentId, manifest] of Object.entries(data)) {
           this.localRegistry.set(agentId, manifest);
         }
-        logger.info(`Loaded ${Object.keys(data).length} peer agent manifests from persistent storage.`);
+        logger.info(
+          `Loaded ${Object.keys(data).length} peer agent manifests from persistent storage.`,
+        );
       }
     } catch (err: any) {
       logger.error("Failed to load peer agents from persistent file", err);
@@ -50,7 +50,9 @@ export class AgentRouter {
         data[id] = manifest;
       }
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
-      logger.info(`Persisted ${this.localRegistry.size} peer agent manifests to ${filePath}.`);
+      logger.info(
+        `Persisted ${this.localRegistry.size} peer agent manifests to ${filePath}.`,
+      );
     } catch (err: any) {
       logger.error("Failed to persist peer agents to file", err);
     }
@@ -58,6 +60,7 @@ export class AgentRouter {
 
   public static registerAgent(agentId: string, manifest: any): void {
     this.ensureRegistryLoaded();
+    manifest.registeredAt = manifest.registeredAt || Date.now();
     this.localRegistry.set(agentId, manifest);
     logger.info(`Registered agent '${agentId}' in router database.`);
     this.persistRegistry();
@@ -68,46 +71,67 @@ export class AgentRouter {
     skillName: string,
     params: Record<string, any>,
     paymentDetails?: PaymentDetails,
-    context?: any
+    context?: any,
   ): Promise<any> {
     this.ensureRegistryLoaded();
-    logger.info(`Routing request to agent '${targetAgentId}' for skill '${skillName}'`);
+    logger.info(
+      `Routing request to agent '${targetAgentId}' for skill '${skillName}'`,
+    );
 
     if (targetAgentId === "monadforge-ai" || targetAgentId === "monadforge") {
-      return this.localExecutor.executeSkill(skillName, params, paymentDetails, context);
+      return this.localExecutor.executeSkill(
+        skillName,
+        params,
+        paymentDetails,
+        context,
+      );
     }
 
     let remoteAgent = this.localRegistry.get(targetAgentId);
+    const isExpired = remoteAgent && remoteAgent.registeredAt && (Date.now() - remoteAgent.registeredAt > 3600000);
 
-    if (!remoteAgent && process.env.AGENT_REGISTRY_ADDRESS) {
-      logger.info(`Agent '${targetAgentId}' not found locally. Querying Registry contract at ${process.env.AGENT_REGISTRY_ADDRESS}`);
+    if ((!remoteAgent || isExpired) && process.env.AGENT_REGISTRY_ADDRESS) {
+      logger.info(
+        `Agent '${targetAgentId}' not found locally or cache expired. Querying Registry contract at ${process.env.AGENT_REGISTRY_ADDRESS}`,
+      );
       try {
         const config = getConfig();
         const provider = new ethers.JsonRpcProvider(config.MONAD_RPC_URL);
         const registryAbi = [
-          "function getAgent(string agentId) external view returns (string name, string endpointUrl, string manifestJson)"
+          "function getAgent(string agentId) external view returns (string name, string endpointUrl, string manifestJson)",
         ];
-        const registryContract = new ethers.Contract(process.env.AGENT_REGISTRY_ADDRESS, registryAbi, provider);
-        const [name, endpointUrl, manifestJson] = await registryContract.getAgent(targetAgentId);
-        
+        const registryContract = new ethers.Contract(
+          process.env.AGENT_REGISTRY_ADDRESS,
+          registryAbi,
+          provider,
+        );
+        const [name, endpointUrl, manifestJson] =
+          await registryContract.getAgent(targetAgentId);
+
         if (name || endpointUrl || manifestJson) {
           let parsedManifest = {};
           try {
             parsedManifest = JSON.parse(manifestJson);
           } catch {}
-          
+
           remoteAgent = {
             agentId: targetAgentId,
             name: name || targetAgentId,
             endpointUrl: endpointUrl || "",
-            ...parsedManifest
+            registeredAt: Date.now(),
+            ...parsedManifest,
           };
           this.localRegistry.set(targetAgentId, remoteAgent);
           this.persistRegistry();
-          logger.info(`Dynamically registered peer '${targetAgentId}' from on-chain Registry.`);
+          logger.info(
+            `Dynamically registered peer '${targetAgentId}' from on-chain Registry.`,
+          );
         }
       } catch (err: any) {
-        logger.error(`On-chain Registry query failed for '${targetAgentId}'`, err);
+        logger.error(
+          `On-chain Registry query failed for '${targetAgentId}'`,
+          err,
+        );
       }
     }
 
@@ -115,27 +139,41 @@ export class AgentRouter {
       throw new Error(`Target agent '${targetAgentId}' not found in registry.`);
     }
 
-    logger.info(`Simulating remote call to agent '${targetAgentId}' for skill '${skillName}'`);
-    if (remoteAgent.pricing?.[skillName] && parseFloat(remoteAgent.pricing[skillName].price) > 0) {
+    logger.info(
+      `Simulating remote call to agent '${targetAgentId}' for skill '${skillName}'`,
+    );
+    if (
+      remoteAgent.pricing?.[skillName] &&
+      parseFloat(remoteAgent.pricing[skillName].price) > 0
+    ) {
       if (!paymentDetails) {
-        throw new Error(`Agent '${targetAgentId}' requires payment for skill '${skillName}'.`);
+        throw new Error(
+          `Agent '${targetAgentId}' requires payment for skill '${skillName}'.`,
+        );
       }
     }
 
     if (remoteAgent.endpointUrl) {
-      logger.info(`Sending real network request to agent '${targetAgentId}' at ${remoteAgent.endpointUrl}`);
+      logger.info(
+        `Sending real network request to agent '${targetAgentId}' at ${remoteAgent.endpointUrl}`,
+      );
       const payloadObj = {
         skillName,
         params,
         paymentDetails,
-        timestamp: Date.now().toString()
+        timestamp: Date.now().toString(),
       };
       const payloadStr = JSON.stringify(payloadObj);
 
       const config = getConfig();
       let privateKey = config.DEPLOYER_PRIVATE_KEY;
-      if (!privateKey || privateKey === "0x0000000000000000000000000000000000000000000000000000000000000000") {
-        privateKey = "0x0123456789012345678901234567890123456789012345678901234567890123";
+      if (
+        !privateKey ||
+        privateKey ===
+          "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ) {
+        privateKey =
+          "0x0123456789012345678901234567890123456789012345678901234567890123";
       }
       const wallet = new ethers.Wallet(privateKey);
       const senderAddress = wallet.address;
@@ -155,14 +193,16 @@ export class AgentRouter {
           headers: {
             "Content-Type": "application/json",
             "X-Agent-Signature": signature,
-            "X-Agent-Sender": senderAddress
+            "X-Agent-Sender": senderAddress,
           },
-          body: payloadStr
+          body: payloadStr,
         });
 
         if (!response.ok) {
           const errBody = await response.json().catch(() => ({}));
-          throw new Error(`HTTP error ${response.status}: ${errBody.error || response.statusText}`);
+          throw new Error(
+            `HTTP error ${response.status}: ${errBody.error || response.statusText}`,
+          );
         }
 
         const resJson = await response.json();
@@ -180,8 +220,8 @@ export class AgentRouter {
         agentId: targetAgentId,
         skill: skillName,
         timestamp: new Date().toISOString(),
-        mockData: true
-      }
+        mockData: true,
+      },
     };
   }
 
@@ -201,7 +241,7 @@ export class AgentRouter {
   public static getRegisteredAgents(): Record<string, any> {
     this.ensureRegistryLoaded();
     const agents: Record<string, any> = {
-      "monadforge-ai": AgentIdentity.getManifest()
+      "monadforge-ai": AgentIdentity.getManifest(),
     };
     for (const [id, manifest] of this.localRegistry.entries()) {
       agents[id] = manifest;
@@ -209,4 +249,3 @@ export class AgentRouter {
     return agents;
   }
 }
-

@@ -33,7 +33,13 @@ jest.mock("@monadforge/ai", () => {
         continue: jest.fn().mockResolvedValue({ success: true }),
       },
       actions: {
-        deploy: jest.fn().mockResolvedValue({ status: "success", contractAddress: "0x123", transactionHash: "0xabc" }),
+        deploy: jest
+          .fn()
+          .mockResolvedValue({
+            status: "success",
+            contractAddress: "0x123",
+            transactionHash: "0xabc",
+          }),
       },
     },
   };
@@ -188,7 +194,10 @@ describe("MCP Server Unit Tests", () => {
         method: "tools/call",
         params: {
           name: "audit_project",
-          arguments: { projectId: "test-project", filePath: "contracts/Token.sol" },
+          arguments: {
+            projectId: "test-project",
+            filePath: "contracts/Token.sol",
+          },
         },
       });
       expect(response.isError).toBeUndefined();
@@ -231,7 +240,10 @@ describe("MCP Server Unit Tests", () => {
         method: "tools/call",
         params: {
           name: "audit_project",
-          arguments: { projectId: "test-project", filePath: "contracts/Token.sol" },
+          arguments: {
+            projectId: "test-project",
+            filePath: "contracts/Token.sol",
+          },
         },
       });
       expect(response.isError).toBeUndefined();
@@ -247,7 +259,10 @@ describe("MCP Server Unit Tests", () => {
         method: "tools/call",
         params: {
           name: "audit_project",
-          arguments: { projectId: "test-project", filePath: "contracts/Token.sol" },
+          arguments: {
+            projectId: "test-project",
+            filePath: "contracts/Token.sol",
+          },
         },
       });
       expect(response.isError).toBe(true);
@@ -487,8 +502,8 @@ describe("MCP Server Unit Tests", () => {
       AgentRouter.registerAgent("some-other-agent", {
         agentId: "some-other-agent",
         pricing: {
-          "search_docs": { price: "0.0", token: "MON" }
-        }
+          search_docs: { price: "0.0", token: "MON" },
+        },
       });
       const response = await callToolHandler({
         method: "tools/call",
@@ -497,7 +512,7 @@ describe("MCP Server Unit Tests", () => {
           arguments: {
             targetAgentId: "some-other-agent",
             skillName: "search_docs",
-            params: { query: "parallel evm" }
+            params: { query: "parallel evm" },
           },
         },
       });
@@ -514,7 +529,7 @@ describe("MCP Server Unit Tests", () => {
           name: "execute_skill",
           arguments: {
             skillName: "search_docs",
-            params: { query: "monad parallel" }
+            params: { query: "monad parallel" },
           },
         },
       });
@@ -528,7 +543,7 @@ describe("MCP Server Unit Tests", () => {
           name: "execute_skill",
           arguments: {
             skillName: "run_audit",
-            params: { code: "contract X {}" }
+            params: { code: "contract X {}" },
           },
         },
       });
@@ -545,7 +560,9 @@ describe("MCP Server Unit Tests", () => {
         },
       });
       expect(response.isError).toBe(true);
-      expect(response.content[0].text).toContain("Tool not found: invalid_tool");
+      expect(response.content[0].text).toContain(
+        "Tool not found: invalid_tool",
+      );
     });
   });
 

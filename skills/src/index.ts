@@ -103,7 +103,10 @@ export class AgentSkills {
           context?.deployerPrivateKey ||
           process.env.DEPLOYER_PRIVATE_KEY ||
           "0x0000000000000000000000000000000000000000000000000000000000000000";
-        const deployRes = await this.actionLayer.deployContract(compileRes, key);
+        const deployRes = await this.actionLayer.deployContract(
+          compileRes,
+          key,
+        );
         if (deployRes.status === "success") {
           const mainFile = Object.keys(contracts)[0];
           const sourceCode = contracts[mainFile] || "";
@@ -111,7 +114,7 @@ export class AgentSkills {
             const verifyRes = await this.actionLayer.verifyDeployment(
               deployRes.metadata.contractAddress,
               sourceCode,
-              { contractName: path.basename(mainFile, ".sol") }
+              { contractName: path.basename(mainFile, ".sol") },
             );
             deployRes.metadata.verificationStatus = verifyRes.status;
             deployRes.metadata.verificationMessage = verifyRes.metadata.message;

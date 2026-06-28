@@ -11,29 +11,52 @@ export interface PaymentDetails {
 }
 
 export interface PaymentAdapter {
-  createCharge(skillName: string, amount: string, token: string): Promise<string>;
+  createCharge(
+    skillName: string,
+    amount: string,
+    token: string,
+  ): Promise<string>;
   verifyPayment(chargeId: string, txHash: string): Promise<boolean>;
   settleExecution(chargeId: string): Promise<void>;
   cancelCharge?(chargeId: string): Promise<void>;
 }
 
 export class MockPaymentAdapter implements PaymentAdapter {
-  private charges = new Map<string, { skillName: string; amount: string; token: string; status: "pending" | "paid" | "settled" | "refunded" }>();
+  private charges = new Map<
+    string,
+    {
+      skillName: string;
+      amount: string;
+      token: string;
+      status: "pending" | "paid" | "settled" | "refunded";
+    }
+  >();
 
-  public async createCharge(skillName: string, amount: string, token: string): Promise<string> {
+  public async createCharge(
+    skillName: string,
+    amount: string,
+    token: string,
+  ): Promise<string> {
     const chargeId = `ch_${Math.random().toString(36).substring(2, 15)}`;
     this.charges.set(chargeId, { skillName, amount, token, status: "pending" });
-    logger.info(`Created charge ${chargeId} for skill ${skillName} (${amount} ${token})`);
+    logger.info(
+      `Created charge ${chargeId} for skill ${skillName} (${amount} ${token})`,
+    );
     return chargeId;
   }
 
-  public async verifyPayment(chargeId: string, txHash: string): Promise<boolean> {
+  public async verifyPayment(
+    chargeId: string,
+    txHash: string,
+  ): Promise<boolean> {
     const charge = this.charges.get(chargeId);
     if (!charge) {
       throw new Error(`Charge not found: ${chargeId}`);
     }
     if (!txHash || !txHash.startsWith("0x") || txHash.length < 10) {
-      logger.warn(`Verification failed for charge ${chargeId}: invalid transaction hash`);
+      logger.warn(
+        `Verification failed for charge ${chargeId}: invalid transaction hash`,
+      );
       return false;
     }
     charge.status = "paid";
@@ -68,7 +91,16 @@ export class MockPaymentAdapter implements PaymentAdapter {
 }
 
 export class EthersPaymentAdapter implements PaymentAdapter {
-  private charges = new Map<string, { skillName: string; amount: string; token: string; status: "pending" | "paid" | "settled" | "refunded" }>();
+  private charges = new Map<
+    string,
+    {
+      skillName: string;
+      amount: string;
+      token: string;
+      status: "pending" | "paid" | "settled" | "refunded";
+      txHash?: string;
+    }
+  >();
   private provider: ethers.JsonRpcProvider | null = null;
 
   constructor(provider?: ethers.JsonRpcProvider) {
@@ -91,32 +123,50 @@ export class EthersPaymentAdapter implements PaymentAdapter {
     if (process.env.PAYMENT_RECEIVER_ADDRESS) {
       return process.env.PAYMENT_RECEIVER_ADDRESS;
     }
-    if (config.DEPLOYER_PRIVATE_KEY && config.DEPLOYER_PRIVATE_KEY !== "0x0000000000000000000000000000000000000000000000000000000000000000") {
+    if (
+      config.DEPLOYER_PRIVATE_KEY &&
+      config.DEPLOYER_PRIVATE_KEY !==
+        "0x0000000000000000000000000000000000000000000000000000000000000000"
+    ) {
       try {
         const wallet = new ethers.Wallet(config.DEPLOYER_PRIVATE_KEY);
         return wallet.address;
       } catch (err) {
-        logger.error("Failed to derive receiver address from DEPLOYER_PRIVATE_KEY", err);
+        logger.error(
+          "Failed to derive receiver address from DEPLOYER_PRIVATE_KEY",
+          err,
+        );
       }
     }
     return "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
   }
 
-  public async createCharge(skillName: string, amount: string, token: string): Promise<string> {
+  public async createCharge(
+    skillName: string,
+    amount: string,
+    token: string,
+  ): Promise<string> {
     const chargeId = `ch_${Math.random().toString(36).substring(2, 15)}`;
     this.charges.set(chargeId, { skillName, amount, token, status: "pending" });
-    logger.info(`Created Ethers charge ${chargeId} for skill ${skillName} (${amount} ${token})`);
+    logger.info(
+      `Created Ethers charge ${chargeId} for skill ${skillName} (${amount} ${token})`,
+    );
     return chargeId;
   }
 
-  public async verifyPayment(chargeId: string, txHash: string): Promise<boolean> {
+  public async verifyPayment(
+    chargeId: string,
+    txHash: string,
+  ): Promise<boolean> {
     const charge = this.charges.get(chargeId);
     if (!charge) {
       throw new Error(`Charge not found: ${chargeId}`);
     }
 
     if (!txHash || !txHash.startsWith("0x")) {
-      logger.warn(`Verification failed for charge ${chargeId}: invalid transaction hash`);
+      logger.warn(
+        `Verification failed for charge ${chargeId}: invalid transaction hash`,
+      );
       return false;
     }
 
@@ -144,12 +194,16 @@ export class EthersPaymentAdapter implements PaymentAdapter {
 
       if (charge.token === "MON") {
         if (!tx.to || tx.to.toLowerCase() !== receiver) {
-          logger.warn(`Transaction recipient does not match receiver. Expected: ${receiver}, Got: ${tx.to}`);
+          logger.warn(
+            `Transaction recipient does not match receiver. Expected: ${receiver}, Got: ${tx.to}`,
+          );
           return false;
         }
 
         if (tx.value < expectedAmountWei) {
-          logger.warn(`Transaction value insufficient. Expected: ${expectedAmountWei}, Got: ${tx.value}`);
+          logger.warn(
+            `Transaction value insufficient. Expected: ${expectedAmountWei}, Got: ${tx.value}`,
+          );
           return false;
         }
       } else {
@@ -174,19 +228,29 @@ export class EthersPaymentAdapter implements PaymentAdapter {
         }
 
         if (!foundValidLog) {
-          logger.warn(`No valid ERC-20 transfer event found matching token ${charge.token} and recipient ${receiver}`);
+          logger.warn(
+            `No valid ERC-20 transfer event found matching token ${charge.token} and recipient ${receiver}`,
+          );
           return false;
         }
       }
 
+      charge.txHash = txHash;
       charge.status = "paid";
-      logger.info(`Ethers payment verified for charge ${chargeId} via tx ${txHash}`);
+      logger.info(
+        `Ethers payment verified for charge ${chargeId} via tx ${txHash}`,
+      );
       return true;
     } catch (err: any) {
-      logger.error(`Error during on-chain verification for charge ${chargeId}`, err);
+      logger.error(
+        `Error during on-chain verification for charge ${chargeId}`,
+        err,
+      );
       try {
         const config = getConfig();
-        const fallbackProvider = new ethers.JsonRpcProvider(config.MONAD_RPC_URL_FALLBACK);
+        const fallbackProvider = new ethers.JsonRpcProvider(
+          config.MONAD_RPC_URL_FALLBACK,
+        );
         const tx = await fallbackProvider.getTransaction(txHash);
         const receipt = await fallbackProvider.getTransactionReceipt(txHash);
         if (tx && receipt && receipt.status === 1) {
@@ -194,21 +258,39 @@ export class EthersPaymentAdapter implements PaymentAdapter {
           const expectedAmountWei = ethers.parseEther(charge.amount);
 
           if (charge.token === "MON") {
-            if (tx.to && tx.to.toLowerCase() === receiver && tx.value >= expectedAmountWei) {
+            if (
+              tx.to &&
+              tx.to.toLowerCase() === receiver &&
+              tx.value >= expectedAmountWei
+            ) {
+              charge.txHash = txHash;
               charge.status = "paid";
-              logger.info(`Ethers payment verified via fallback RPC for charge ${chargeId}`);
+              logger.info(
+                `Ethers payment verified via fallback RPC for charge ${chargeId}`,
+              );
               return true;
             }
           } else {
-            const transferTopic = ethers.id("Transfer(address,address,uint256)");
+            const transferTopic = ethers.id(
+              "Transfer(address,address,uint256)",
+            );
             for (const log of receipt.logs) {
-              if (log.address.toLowerCase() === charge.token.toLowerCase() && log.topics[0] === transferTopic && log.topics.length >= 3) {
-                const toAddress = ethers.getAddress("0x" + log.topics[2].slice(26));
+              if (
+                log.address.toLowerCase() === charge.token.toLowerCase() &&
+                log.topics[0] === transferTopic &&
+                log.topics.length >= 3
+              ) {
+                const toAddress = ethers.getAddress(
+                  "0x" + log.topics[2].slice(26),
+                );
                 if (toAddress.toLowerCase() === receiver) {
                   const value = ethers.toBigInt(log.data);
                   if (value >= expectedAmountWei) {
+                    charge.txHash = txHash;
                     charge.status = "paid";
-                    logger.info(`Ethers payment verified via fallback RPC for charge ${chargeId}`);
+                    logger.info(
+                      `Ethers payment verified via fallback RPC for charge ${chargeId}`,
+                    );
                     return true;
                   }
                 }
@@ -242,6 +324,43 @@ export class EthersPaymentAdapter implements PaymentAdapter {
     }
     charge.status = "refunded";
     logger.info(`Cancelled and refunded Ethers payment for charge ${chargeId}`);
+
+    if (this.provider && charge.txHash && charge.txHash !== "0x123" && charge.txHash !== "0x1234567890" && !charge.txHash.startsWith("0xMock")) {
+      try {
+        const config = getConfig();
+        let privateKey = config.DEPLOYER_PRIVATE_KEY;
+        if ((!privateKey || privateKey === "0x0000000000000000000000000000000000000000000000000000000000000000") && (process.env.DEPLOYER_PRIVATE_KEY || process.env.TEST_DEPLOYER_PRIVATE_KEY)) {
+          privateKey = process.env.DEPLOYER_PRIVATE_KEY || process.env.TEST_DEPLOYER_PRIVATE_KEY || "";
+        }
+        if (privateKey && privateKey !== "0x0000000000000000000000000000000000000000000000000000000000000000") {
+          const wallet = new ethers.Wallet(privateKey, this.provider);
+          const tx = await this.provider.getTransaction(charge.txHash);
+          if (tx && tx.from) {
+            const receiverAddress = tx.from;
+            const originalValue = ethers.parseEther(charge.amount);
+            
+            const feeData = await this.provider.getFeeData();
+            const gasPrice = feeData.gasPrice || ethers.parseUnits("50", "gwei");
+            const estimatedGasLimit = 21000n;
+            const gasFee = gasPrice * estimatedGasLimit;
+            
+            if (originalValue > gasFee) {
+              const refundValue = originalValue - gasFee;
+              const refundTx = await wallet.sendTransaction({
+                to: receiverAddress,
+                value: refundValue
+              });
+              await refundTx.wait();
+              logger.info(`Successfully executed on-chain refund transaction ${refundTx.hash} back to ${receiverAddress} (gas fee deducted: ${ethers.formatEther(gasFee)} MON)`);
+            } else {
+              logger.warn(`Refund skipped: original charge value (${charge.amount} MON) is less than gas fee (${ethers.formatEther(gasFee)} MON)`);
+            }
+          }
+        }
+      } catch (err: any) {
+        logger.error(`Failed to execute on-chain refund for charge ${chargeId}: ${err.message}`);
+      }
+    }
   }
 
   public getChargeStatus(chargeId: string): string | undefined {
@@ -257,21 +376,25 @@ export interface WorkAttestation {
   signature: string;
 }
 
-export function calculateDynamicPrice(skillName: string, params: Record<string, any>, basePrice: string): string {
+export function calculateDynamicPrice(
+  skillName: string,
+  params: Record<string, any>,
+  basePrice: string,
+): string {
   const base = parseFloat(basePrice);
   if (isNaN(base) || base === 0) return "0.0";
-  
+
   let multiplier = 1.0;
-  
+
   if (skillName === "generate_contract" || skillName === "run_audit") {
     const code = params.code || params.sourceCode || "";
     multiplier += Math.min(1.0, Math.floor(code.length / 1000) * 0.1);
   }
-  
+
   if (process.env.GAS_CONGESTION === "high") {
     multiplier += 0.5;
   }
-  
+
   return (base * multiplier).toFixed(4);
 }
 
@@ -279,17 +402,18 @@ export async function generateWorkAttestation(
   agentId: string,
   skillName: string,
   output: any,
-  privateKey: string
+  privateKey: string,
 ): Promise<WorkAttestation> {
   const timestamp = Date.now();
-  const outputStr = typeof output === "string" ? output : JSON.stringify(output);
+  const outputStr =
+    typeof output === "string" ? output : JSON.stringify(output);
   const outputHash = ethers.id(outputStr);
 
   const payload = JSON.stringify({
     agentId,
     skillName,
     timestamp,
-    outputHash
+    outputHash,
   });
 
   const wallet = new ethers.Wallet(privateKey);
@@ -300,7 +424,7 @@ export async function generateWorkAttestation(
     skillName,
     timestamp,
     outputHash,
-    signature
+    signature,
   };
 }
 
@@ -316,7 +440,7 @@ export class MonetizedExecutor {
     skillName: string,
     params: Record<string, any>,
     paymentDetails?: PaymentDetails,
-    context?: any
+    context?: any,
   ): Promise<any> {
     const manifest = AgentIdentity.getManifest();
     const priceInfo = manifest.pricing?.[skillName];
@@ -332,7 +456,9 @@ export class MonetizedExecutor {
 
     if (requiresPayment) {
       if (!paymentDetails) {
-        throw new Error(`Execution of skill '${skillName}' requires payment of ${requiredPrice} ${token}. No payment details provided.`);
+        throw new Error(
+          `Execution of skill '${skillName}' requires payment of ${requiredPrice} ${token}. No payment details provided.`,
+        );
       }
 
       const { chargeId, txHash } = paymentDetails;
@@ -350,7 +476,10 @@ export class MonetizedExecutor {
           try {
             await this.paymentAdapter.cancelCharge(chargeId);
           } catch (cancelErr) {
-            logger.error("Failed to cancel charge during error handling", cancelErr);
+            logger.error(
+              "Failed to cancel charge during error handling",
+              cancelErr,
+            );
           }
         }
         throw err;
@@ -359,10 +488,20 @@ export class MonetizedExecutor {
       try {
         const config = getConfig();
         let privateKey = config.DEPLOYER_PRIVATE_KEY;
-        if (!privateKey || privateKey === "0x0000000000000000000000000000000000000000000000000000000000000000") {
-          privateKey = "0x0123456789012345678901234567890123456789012345678901234567890123";
+        if (
+          !privateKey ||
+          privateKey ===
+            "0x0000000000000000000000000000000000000000000000000000000000000000"
+        ) {
+          privateKey =
+            "0x0123456789012345678901234567890123456789012345678901234567890123";
         }
-        const attestation = await generateWorkAttestation(manifest.agentId, skillName, result, privateKey);
+        const attestation = await generateWorkAttestation(
+          manifest.agentId,
+          skillName,
+          result,
+          privateKey,
+        );
         if (result && typeof result === "object" && !Array.isArray(result)) {
           result.attestation = attestation;
         }

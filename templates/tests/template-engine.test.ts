@@ -109,9 +109,15 @@ describe("TemplateEngine Unit Tests", () => {
     expect(project.contracts["contracts/MyToken.sol"]).toContain(
       "contract MyToken is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable",
     );
-    expect(project.contracts["contracts/MyToken.sol"]).toContain("_disableInitializers()");
-    expect(project.tests["test/MyToken.test.ts"]).toContain("MyToken Upgradeable");
-    expect(project.tests["test/MyToken.test.ts"]).toContain("ethers.getContractFactory(\"ERC1967Proxy\")");
+    expect(project.contracts["contracts/MyToken.sol"]).toContain(
+      "_disableInitializers()",
+    );
+    expect(project.tests["test/MyToken.test.ts"]).toContain(
+      "MyToken Upgradeable",
+    );
+    expect(project.tests["test/MyToken.test.ts"]).toContain(
+      'ethers.getContractFactory("ERC1967Proxy")',
+    );
     expect(project.readme).toContain("MyToken Upgradeable ERC20 Token");
   });
 });

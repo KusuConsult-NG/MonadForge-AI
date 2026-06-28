@@ -20,11 +20,14 @@ const logger = createLogger("DeploymentEngine");
 export class TransactionQueue {
   private static queues = new Map<string, Promise<any>>();
 
-  public static async enqueue<T>(privateKey: string, fn: () => Promise<T>): Promise<T> {
+  public static async enqueue<T>(
+    privateKey: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
     if (!privateKey || privateKey.length < 64) {
       return fn();
     }
-    
+
     let key: string;
     try {
       key = ethers.computeAddress(privateKey).toLowerCase();
@@ -33,26 +36,34 @@ export class TransactionQueue {
     }
 
     const current = this.queues.get(key) || Promise.resolve();
-    
-    const next = current.then(async () => {
-      return fn();
-    }).catch(async () => {
-      return fn();
-    });
+
+    const next = current
+      .then(async () => {
+        return fn();
+      })
+      .catch(async () => {
+        return fn();
+      });
 
     this.queues.set(key, next);
     return next;
   }
 }
 
-export function injectCustomGasEstimator(provider: ethers.JsonRpcProvider): ethers.JsonRpcProvider {
-  provider.getFeeData = async function (this: ethers.JsonRpcProvider): Promise<ethers.FeeData> {
+export function injectCustomGasEstimator(
+  provider: ethers.JsonRpcProvider,
+): ethers.JsonRpcProvider {
+  provider.getFeeData = async function (
+    this: ethers.JsonRpcProvider,
+  ): Promise<ethers.FeeData> {
     try {
       const history = await this.send("eth_feeHistory", [5, "latest", [50]]);
 
       let baseFee = 0n;
       if (history.baseFeePerGas && history.baseFeePerGas.length > 0) {
-        baseFee = BigInt(history.baseFeePerGas[history.baseFeePerGas.length - 1]);
+        baseFee = BigInt(
+          history.baseFeePerGas[history.baseFeePerGas.length - 1],
+        );
       } else {
         const latestBlock = await this.getBlock("latest");
         baseFee = latestBlock?.baseFeePerGas ?? 0n;
@@ -105,16 +116,24 @@ export class MonadJsonRpcProvider extends ethers.JsonRpcProvider {
  * Attempts the primary RPC URL; if it fails to connect, silently
  * falls back to MONAD_RPC_URL_FALLBACK and returns the working provider.
  */
-async function getWorkingProvider(config: ReturnType<typeof getConfig>): Promise<ethers.JsonRpcProvider> {
-  const primary = injectCustomGasEstimator(new ethers.JsonRpcProvider(config.MONAD_RPC_URL));
+async function getWorkingProvider(
+  config: ReturnType<typeof getConfig>,
+): Promise<ethers.JsonRpcProvider> {
+  const primary = injectCustomGasEstimator(
+    new ethers.JsonRpcProvider(config.MONAD_RPC_URL),
+  );
   try {
     if (typeof primary.getBlockNumber === "function") {
       await primary.getBlockNumber();
     }
     return primary;
   } catch {
-    logger.warn(`Primary RPC ${config.MONAD_RPC_URL} unreachable, switching to fallback`);
-    const fallback = injectCustomGasEstimator(new ethers.JsonRpcProvider(config.MONAD_RPC_URL_FALLBACK));
+    logger.warn(
+      `Primary RPC ${config.MONAD_RPC_URL} unreachable, switching to fallback`,
+    );
+    const fallback = injectCustomGasEstimator(
+      new ethers.JsonRpcProvider(config.MONAD_RPC_URL_FALLBACK),
+    );
     if (typeof fallback.getBlockNumber === "function") {
       await fallback.getBlockNumber(); // throws if fallback is also down
     }
@@ -311,7 +330,8 @@ export class DeploymentEngine implements IDeploymentEngine {
 
     if (this.isMockEnv()) {
       const address = "0xDePloYedContractAddResS0000000000000000123";
-      const txHash = "0xMockTxHashDePloY0000000000000000000000000000000000000000000456";
+      const txHash =
+        "0xMockTxHashDePloY0000000000000000000000000000000000000000000456";
       return {
         status: "success",
         action: "deploy",
@@ -332,11 +352,12 @@ export class DeploymentEngine implements IDeploymentEngine {
     try {
       const config = getConfig();
       const provider = await getWorkingProvider(config);
-      const wallet = new ethers.Wallet(deployerPrivateKey, provider);
+      const baseWallet = new ethers.Wallet(deployerPrivateKey, provider);
+      const wallet = new ethers.NonceManager(baseWallet);
 
-      const balance = await provider.getBalance(wallet.address);
+      const balance = await provider.getBalance(baseWallet.address);
       if (balance === 0n) {
-        logger.error(`Deployer address ${wallet.address} has 0 MON balance.`);
+        logger.error(`Deployer address ${baseWallet.address} has 0 MON balance.`);
         return {
           status: "failure",
           action: "deploy",
@@ -346,7 +367,7 @@ export class DeploymentEngine implements IDeploymentEngine {
             gasUsed: "0",
             status: "failed",
             errors: [
-              `Deployer account ${wallet.address} has 0 MON balance. Please fund your account using the faucet: https://faucet.monad.xyz/`,
+              `Deployer account ${baseWallet.address} has 0 MON balance. Please fund your account using the faucet: https://faucet.monad.xyz/`,
             ],
           },
         };
@@ -376,7 +397,9 @@ export class DeploymentEngine implements IDeploymentEngine {
         }
       }
 
-      logger.info(`Deployed successfully to ${contractAddress} (gas: ${gasUsed})`);
+      logger.info(
+        `Deployed successfully to ${contractAddress} (gas: ${gasUsed})`,
+      );
       return {
         status: "success",
         action: "deploy",
@@ -413,10 +436,17 @@ export class DeploymentEngine implements IDeploymentEngine {
     deployerPrivateKey: string,
     initializerArgs?: any[],
     initializerMethod: string = "initialize",
-  ): Promise<PrimitiveOutput<DeploymentResult & { proxyAddress: string; implementationAddress: string }>> {
-    logger.info("Starting upgradeable deployment (UUPS / ERC1967 Proxy) to Monad Testnet", {
-      operation: "deployUpgradeable",
-    });
+  ): Promise<
+    PrimitiveOutput<
+      DeploymentResult & { proxyAddress: string; implementationAddress: string }
+    >
+  > {
+    logger.info(
+      "Starting upgradeable deployment (UUPS / ERC1967 Proxy) to Monad Testnet",
+      {
+        operation: "deployUpgradeable",
+      },
+    );
 
     if (this.isMockEnv()) {
       const implAddress = "0xMockImplContractAddress000000000000000001";
@@ -445,12 +475,17 @@ export class DeploymentEngine implements IDeploymentEngine {
     try {
       const config = getConfig();
       const provider = await getWorkingProvider(config);
-      const wallet = new ethers.Wallet(deployerPrivateKey, provider);
+      const wallet = new ethers.NonceManager(new ethers.Wallet(deployerPrivateKey, provider));
 
       // 1. Deploy implementation contract first
-      const implResult = await this.deployToTestnet(implementationArtifact, deployerPrivateKey);
+      const implResult = await this.deployToTestnet(
+        implementationArtifact,
+        deployerPrivateKey,
+      );
       if (implResult.status !== "success") {
-        throw new Error(`Implementation deployment failed: ${implResult.metadata.errors?.join(", ")}`);
+        throw new Error(
+          `Implementation deployment failed: ${implResult.metadata.errors?.join(", ")}`,
+        );
       }
       const implementationAddress = implResult.metadata.contractAddress;
       const implGasUsed = implResult.metadata.gasUsed;
@@ -464,14 +499,26 @@ contract MonadERC1967Proxy is ERC1967Proxy {
     constructor(address _logic, bytes memory _data) ERC1967Proxy(_logic, _data) {}
 }
       `;
-      const compileResult = await this.compile({ "ProxyWrapper.sol": wrapperContract });
-      if (compileResult.status !== "success" || !compileResult.metadata.success) {
-        throw new Error(`Failed to compile ERC1967Proxy wrapper: ${compileResult.metadata.errors?.join(", ")}`);
+      const compileResult = await this.compile({
+        "ProxyWrapper.sol": wrapperContract,
+      });
+      if (
+        compileResult.status !== "success" ||
+        !compileResult.metadata.success
+      ) {
+        throw new Error(
+          `Failed to compile ERC1967Proxy wrapper: ${compileResult.metadata.errors?.join(", ")}`,
+        );
       }
 
       // 3. Encode initializer call data
-      const implInterface = new ethers.Interface(implementationArtifact.metadata.abi);
-      const initData = implInterface.encodeFunctionData(initializerMethod, initializerArgs || []);
+      const implInterface = new ethers.Interface(
+        implementationArtifact.metadata.abi,
+      );
+      const initData = implInterface.encodeFunctionData(
+        initializerMethod,
+        initializerArgs || [],
+      );
 
       // 4. Deploy proxy contract
       const proxyFactory = new ethers.ContractFactory(
@@ -479,7 +526,10 @@ contract MonadERC1967Proxy is ERC1967Proxy {
         compileResult.metadata.bytecode,
         wallet,
       );
-      const proxyContract = await proxyFactory.deploy(implementationAddress, initData);
+      const proxyContract = await proxyFactory.deploy(
+        implementationAddress,
+        initData,
+      );
       await proxyContract.waitForDeployment();
 
       const proxyAddress = await proxyContract.getAddress();
@@ -496,9 +546,13 @@ contract MonadERC1967Proxy is ERC1967Proxy {
         }
       }
 
-      const totalGasUsed = (BigInt(implGasUsed) + BigInt(proxyGasUsed)).toString();
+      const totalGasUsed = (
+        BigInt(implGasUsed) + BigInt(proxyGasUsed)
+      ).toString();
 
-      logger.info(`Upgradeable contract deployed successfully. Proxy: ${proxyAddress}, Impl: ${implementationAddress}`);
+      logger.info(
+        `Upgradeable contract deployed successfully. Proxy: ${proxyAddress}, Impl: ${implementationAddress}`,
+      );
 
       return {
         status: "success",
@@ -736,7 +790,7 @@ export class ActionLayer {
       this.deploymentEngine.deployToTestnet(
         compiledArtifact,
         deployerPrivateKey,
-      )
+      ),
     );
   }
 
@@ -745,14 +799,18 @@ export class ActionLayer {
     deployerPrivateKey: string,
     initializerArgs?: any[],
     initializerMethod?: string,
-  ): Promise<PrimitiveOutput<DeploymentResult & { proxyAddress: string; implementationAddress: string }>> {
+  ): Promise<
+    PrimitiveOutput<
+      DeploymentResult & { proxyAddress: string; implementationAddress: string }
+    >
+  > {
     return TransactionQueue.enqueue(deployerPrivateKey, () =>
       this.deploymentEngine.deployUpgradeable(
         implementationArtifact,
         deployerPrivateKey,
         initializerArgs,
         initializerMethod,
-      )
+      ),
     );
   }
 
@@ -778,7 +836,8 @@ export class ActionLayer {
       return {
         status: "success",
         action: "call",
-        txHash: "0xMockTxHashCall000000000000000000000000000000000000000000000000111",
+        txHash:
+          "0xMockTxHashCall000000000000000000000000000000000000000000000000111",
         stateChange: {
           contract: contractAddress,
           method: functionName,
@@ -792,7 +851,7 @@ export class ActionLayer {
     }
 
     const provider = await getWorkingProvider(config);
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const wallet = new ethers.NonceManager(new ethers.Wallet(privateKey, provider));
     const contract = new ethers.Contract(contractAddress, abi, wallet);
 
     const fragment = contract.interface.getFunction(functionName);
@@ -856,7 +915,8 @@ export class ActionLayer {
       config.DEPLOYER_PRIVATE_KEY ===
         "0x0000000000000000000000000000000000000000000000000000000000000000";
     if (isMock) {
-      const txHash = "0xMockTxHashMint000000000000000000000000000000000000000000000000222";
+      const txHash =
+        "0xMockTxHashMint000000000000000000000000000000000000000000000000222";
       return {
         status: "success",
         action: "mint",
@@ -934,7 +994,8 @@ export class ActionLayer {
       config.DEPLOYER_PRIVATE_KEY ===
         "0x0000000000000000000000000000000000000000000000000000000000000000";
     if (isMock) {
-      const txHash = "0xMockTxHashStake0000000000000000000000000000000000000000000000333";
+      const txHash =
+        "0xMockTxHashStake0000000000000000000000000000000000000000000000333";
       return {
         status: "success",
         action: "stake",
@@ -1008,7 +1069,8 @@ export class ActionLayer {
       config.DEPLOYER_PRIVATE_KEY ===
         "0x0000000000000000000000000000000000000000000000000000000000000000";
     if (isMock) {
-      const txHash = "0xMockTxHashSwap00000000000000000000000000000000000000000000000444";
+      const txHash =
+        "0xMockTxHashSwap00000000000000000000000000000000000000000000000444";
       return {
         status: "success",
         action: "swap",
@@ -1059,7 +1121,8 @@ export class ActionLayer {
       config.DEPLOYER_PRIVATE_KEY ===
         "0x0000000000000000000000000000000000000000000000000000000000000000";
     if (isMock) {
-      const txHash = "0xMockTxHashTransfer0000000000000000000000000000000000000000000555";
+      const txHash =
+        "0xMockTxHashTransfer0000000000000000000000000000000000000000000555";
       return {
         status: "success",
         action: "transfer",
@@ -1077,7 +1140,7 @@ export class ActionLayer {
     }
 
     const provider = await getWorkingProvider(config);
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const wallet = new ethers.NonceManager(new ethers.Wallet(privateKey, provider));
 
     if (tokenAddress) {
       const abi = [

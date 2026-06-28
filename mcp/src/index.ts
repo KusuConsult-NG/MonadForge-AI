@@ -7,7 +7,11 @@ import {
 import { createLogger } from "@monadforge/sdk";
 import { monadforge } from "@monadforge/ai";
 import { MemoryEngine } from "@monadforge/memory";
-import { AgentIdentity, AgentRouter, AgentMarketplace } from "@monadforge/agent";
+import {
+  AgentIdentity,
+  AgentRouter,
+  AgentMarketplace,
+} from "@monadforge/agent";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -54,18 +58,42 @@ export function createMcpServer(): Server {
         },
         {
           name: "generate_contract",
-          description: "Generate smart contracts using AI matching specified parameters.",
+          description:
+            "Generate smart contracts using AI matching specified parameters.",
           inputSchema: {
             type: "object",
             properties: {
               name: { type: "string", description: "Name of the contract." },
-              symbol: { type: "string", description: "Token symbol (optional)." },
-              supply: { type: "string", description: "Initial supply (optional)." },
-              rewardToken: { type: "string", description: "Staking reward token (optional)." },
-              stakingToken: { type: "string", description: "Staked token address (optional)." },
-              governanceToken: { type: "string", description: "DAO governance token (optional)." },
-              type: { type: "string", description: "Type of contract, e.g. token, nft, staking, dao (optional)." },
-              prompt: { type: "string", description: "Additional natural language description or features (optional)." },
+              symbol: {
+                type: "string",
+                description: "Token symbol (optional).",
+              },
+              supply: {
+                type: "string",
+                description: "Initial supply (optional).",
+              },
+              rewardToken: {
+                type: "string",
+                description: "Staking reward token (optional).",
+              },
+              stakingToken: {
+                type: "string",
+                description: "Staked token address (optional).",
+              },
+              governanceToken: {
+                type: "string",
+                description: "DAO governance token (optional).",
+              },
+              type: {
+                type: "string",
+                description:
+                  "Type of contract, e.g. token, nft, staking, dao (optional).",
+              },
+              prompt: {
+                type: "string",
+                description:
+                  "Additional natural language description or features (optional).",
+              },
             },
             required: ["name"],
           },
@@ -76,38 +104,52 @@ export function createMcpServer(): Server {
           inputSchema: {
             type: "object",
             properties: {
-              goal: { type: "string", description: "The target goal of the composed system." },
+              goal: {
+                type: "string",
+                description: "The target goal of the composed system.",
+              },
             },
             required: ["goal"],
           },
         },
         {
           name: "audit_project",
-          description: "Audit smart contracts in the project directory for vulnerabilities.",
+          description:
+            "Audit smart contracts in the project directory for vulnerabilities.",
           inputSchema: {
             type: "object",
             properties: {
               projectId: { type: "string", description: "The project ID." },
-              filePath: { type: "string", description: "Optional relative file path of a single contract to audit." },
+              filePath: {
+                type: "string",
+                description:
+                  "Optional relative file path of a single contract to audit.",
+              },
             },
             required: ["projectId"],
           },
         },
         {
           name: "repair_project",
-          description: "Run the self-healing repair loop on failing components or contracts.",
+          description:
+            "Run the self-healing repair loop on failing components or contracts.",
           inputSchema: {
             type: "object",
             properties: {
               projectId: { type: "string", description: "The project ID." },
-              errors: { type: "array", items: { type: "string" }, description: "Compilation or security errors to repair." },
+              errors: {
+                type: "array",
+                items: { type: "string" },
+                description: "Compilation or security errors to repair.",
+              },
             },
             required: ["projectId", "errors"],
           },
         },
         {
           name: "deploy_project",
-          description: "Compile, scan, and deploy project contracts to Monad Testnet.",
+          description:
+            "Compile, scan, and deploy project contracts to Monad Testnet.",
           inputSchema: {
             type: "object",
             properties: {
@@ -123,14 +165,18 @@ export function createMcpServer(): Server {
             type: "object",
             properties: {
               projectId: { type: "string", description: "The project ID." },
-              prompt: { type: "string", description: "Next feature or instruction to implement." },
+              prompt: {
+                type: "string",
+                description: "Next feature or instruction to implement.",
+              },
             },
             required: ["projectId", "prompt"],
           },
         },
         {
           name: "review_architecture",
-          description: "Review the system or protocol design, security model, and scalability.",
+          description:
+            "Review the system or protocol design, security model, and scalability.",
           inputSchema: {
             type: "object",
             properties: {
@@ -139,15 +185,25 @@ export function createMcpServer(): Server {
                 additionalProperties: { type: "string" },
                 description: "Record of contract names to source code.",
               },
-              design: { type: "string", description: "Natural language design description." },
-              code: { type: "string", description: "Solidity code block to review." },
-              architecture: { type: "string", description: "Scalability/architecture overview." },
+              design: {
+                type: "string",
+                description: "Natural language design description.",
+              },
+              code: {
+                type: "string",
+                description: "Solidity code block to review.",
+              },
+              architecture: {
+                type: "string",
+                description: "Scalability/architecture overview.",
+              },
             },
           },
         },
         {
           name: "get_project_context",
-          description: "Retrieve the memory context (contracts, deployments, planning history) for a project.",
+          description:
+            "Retrieve the memory context (contracts, deployments, planning history) for a project.",
           inputSchema: {
             type: "object",
             properties: {
@@ -158,7 +214,8 @@ export function createMcpServer(): Server {
         },
         {
           name: "discover_skills",
-          description: "List all registered agent capabilities, packaging metadata, pricing, and schemas.",
+          description:
+            "List all registered agent capabilities, packaging metadata, pricing, and schemas.",
           inputSchema: { type: "object", properties: {} },
         },
         {
@@ -167,8 +224,14 @@ export function createMcpServer(): Server {
           inputSchema: {
             type: "object",
             properties: {
-              skillName: { type: "string", description: "The name of the skill to execute." },
-              params: { type: "object", description: "Parameters for the skill execution." },
+              skillName: {
+                type: "string",
+                description: "The name of the skill to execute.",
+              },
+              params: {
+                type: "object",
+                description: "Parameters for the skill execution.",
+              },
               paymentDetails: {
                 type: "object",
                 properties: {
@@ -192,9 +255,18 @@ export function createMcpServer(): Server {
           inputSchema: {
             type: "object",
             properties: {
-              targetAgentId: { type: "string", description: "The ID of the target agent." },
-              skillName: { type: "string", description: "The name of the skill to invoke." },
-              params: { type: "object", description: "Parameters for the invocation." },
+              targetAgentId: {
+                type: "string",
+                description: "The ID of the target agent.",
+              },
+              skillName: {
+                type: "string",
+                description: "The name of the skill to invoke.",
+              },
+              params: {
+                type: "object",
+                description: "Parameters for the invocation.",
+              },
               paymentDetails: {
                 type: "object",
                 properties: {
@@ -209,7 +281,8 @@ export function createMcpServer(): Server {
         },
         {
           name: "get_pricing",
-          description: "Query execution fee manifest for registered capabilities.",
+          description:
+            "Query execution fee manifest for registered capabilities.",
           inputSchema: { type: "object", properties: {} },
         },
       ],
@@ -300,7 +373,9 @@ export function createMcpServer(): Server {
           }
 
           if (Object.keys(codeMap).length === 0) {
-            throw new Error(`No contracts found to audit in project ${projectId}`);
+            throw new Error(
+              `No contracts found to audit in project ${projectId}`,
+            );
           }
 
           const auditReports: Record<string, any> = {};
@@ -321,9 +396,14 @@ export function createMcpServer(): Server {
             const contractsDirName = getContractsDirName();
             const contractsDir = path.resolve(process.cwd(), contractsDirName);
             if (fs.existsSync(contractsDir)) {
-              const files = fs.readdirSync(contractsDir).filter(f => f.endsWith(".sol"));
+              const files = fs
+                .readdirSync(contractsDir)
+                .filter((f) => f.endsWith(".sol"));
               if (files.length > 0) {
-                code = fs.readFileSync(path.join(contractsDir, files[0]), "utf8");
+                code = fs.readFileSync(
+                  path.join(contractsDir, files[0]),
+                  "utf8",
+                );
               }
             }
           }
@@ -354,7 +434,8 @@ export function createMcpServer(): Server {
             if (ctx) contracts = ctx.contracts;
           }
           if (Object.keys(contracts).length === 0) {
-            contracts[path.join(contractsDirName, "Token.sol")] = "pragma solidity ^0.8.20; contract Token {}";
+            contracts[path.join(contractsDirName, "Token.sol")] =
+              "pragma solidity ^0.8.20; contract Token {}";
           }
 
           const { ActionLayer } = require("@monadforge/actions");
@@ -394,7 +475,12 @@ export function createMcpServer(): Server {
         }
         case "execute_skill": {
           const { skillName, params, paymentDetails } = args as any;
-          result = await AgentRouter.invokeAgent("monadforge-ai", skillName, params, paymentDetails);
+          result = await AgentRouter.invokeAgent(
+            "monadforge-ai",
+            skillName,
+            params,
+            paymentDetails,
+          );
           break;
         }
         case "discover_agents": {
@@ -402,8 +488,14 @@ export function createMcpServer(): Server {
           break;
         }
         case "invoke_agent": {
-          const { targetAgentId, skillName, params, paymentDetails } = args as any;
-          result = await AgentRouter.invokeAgent(targetAgentId, skillName, params, paymentDetails);
+          const { targetAgentId, skillName, params, paymentDetails } =
+            args as any;
+          result = await AgentRouter.invokeAgent(
+            targetAgentId,
+            skillName,
+            params,
+            paymentDetails,
+          );
           break;
         }
         case "get_pricing": {

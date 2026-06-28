@@ -1,11 +1,18 @@
-import { AgentIdentity, AgentRouter, MonetizedExecutor, AgentServer, MockPaymentAdapter } from "../src/index";
+import {
+  AgentIdentity,
+  AgentRouter,
+  MonetizedExecutor,
+  AgentServer,
+  MockPaymentAdapter,
+} from "../src/index";
 import { ethers } from "ethers";
 
 describe("Agent HTTP Server & Client Tests", () => {
   let server: AgentServer;
   let executor: MonetizedExecutor;
   let testPort = 13010;
-  let privateKey = "0x0123456789012345678901234567890123456789012345678901234567890123";
+  let privateKey =
+    "0x0123456789012345678901234567890123456789012345678901234567890123";
   let wallet = new ethers.Wallet(privateKey);
 
   beforeAll(async () => {
@@ -27,11 +34,13 @@ describe("Agent HTTP Server & Client Tests", () => {
 
   it("should respond to OPTIONS preflight requests with CORS headers", async () => {
     const response = await fetch(`http://localhost:${testPort}/manifest`, {
-      method: "OPTIONS"
+      method: "OPTIONS",
     });
     expect(response.status).toBe(204);
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
-    expect(response.headers.get("access-control-allow-methods")).toContain("POST");
+    expect(response.headers.get("access-control-allow-methods")).toContain(
+      "POST",
+    );
   });
 
   it("should return 404 for unknown endpoints", async () => {
@@ -42,7 +51,11 @@ describe("Agent HTTP Server & Client Tests", () => {
   it("should reject POST /invoke with missing auth headers", async () => {
     const response = await fetch(`http://localhost:${testPort}/invoke`, {
       method: "POST",
-      body: JSON.stringify({ skillName: "search_docs", params: { query: "test" }, timestamp: Date.now().toString() })
+      body: JSON.stringify({
+        skillName: "search_docs",
+        params: { query: "test" },
+        timestamp: Date.now().toString(),
+      }),
     });
     expect(response.status).toBe(401);
     const data = await response.json();
@@ -50,7 +63,11 @@ describe("Agent HTTP Server & Client Tests", () => {
   });
 
   it("should reject POST /invoke with invalid cryptographic signature", async () => {
-    const bodyObj = { skillName: "search_docs", params: { query: "test" }, timestamp: Date.now().toString() };
+    const bodyObj = {
+      skillName: "search_docs",
+      params: { query: "test" },
+      timestamp: Date.now().toString(),
+    };
     const bodyStr = JSON.stringify(bodyObj);
 
     const response = await fetch(`http://localhost:${testPort}/invoke`, {
@@ -58,9 +75,9 @@ describe("Agent HTTP Server & Client Tests", () => {
       headers: {
         "Content-Type": "application/json",
         "X-Agent-Sender": wallet.address,
-        "X-Agent-Signature": "0x" + "0".repeat(130) // Malformed/invalid signature
+        "X-Agent-Signature": "0x" + "0".repeat(130), // Malformed/invalid signature
       },
-      body: bodyStr
+      body: bodyStr,
     });
     expect(response.status).toBe(403);
     const data = await response.json();
@@ -68,7 +85,11 @@ describe("Agent HTTP Server & Client Tests", () => {
   });
 
   it("should reject POST /invoke if signature recovered address doesn't match sender header", async () => {
-    const bodyObj = { skillName: "search_docs", params: { query: "test" }, timestamp: Date.now().toString() };
+    const bodyObj = {
+      skillName: "search_docs",
+      params: { query: "test" },
+      timestamp: Date.now().toString(),
+    };
     const bodyStr = JSON.stringify(bodyObj);
 
     const correctSig = await wallet.signMessage(bodyStr);
@@ -78,9 +99,9 @@ describe("Agent HTTP Server & Client Tests", () => {
       headers: {
         "Content-Type": "application/json",
         "X-Agent-Sender": "0x0000000000000000000000000000000000000000", // Mismatched sender
-        "X-Agent-Signature": correctSig
+        "X-Agent-Signature": correctSig,
       },
-      body: bodyStr
+      body: bodyStr,
     });
     expect(response.status).toBe(403);
   });
@@ -88,7 +109,11 @@ describe("Agent HTTP Server & Client Tests", () => {
   it("should reject POST /invoke if timestamp drift is too high (expired)", async () => {
     // 10 minutes in the past
     const oldTimestamp = (Date.now() - 600000).toString();
-    const bodyObj = { skillName: "search_docs", params: { query: "test" }, timestamp: oldTimestamp };
+    const bodyObj = {
+      skillName: "search_docs",
+      params: { query: "test" },
+      timestamp: oldTimestamp,
+    };
     const bodyStr = JSON.stringify(bodyObj);
 
     const correctSig = await wallet.signMessage(bodyStr);
@@ -98,9 +123,9 @@ describe("Agent HTTP Server & Client Tests", () => {
       headers: {
         "Content-Type": "application/json",
         "X-Agent-Sender": wallet.address,
-        "X-Agent-Signature": correctSig
+        "X-Agent-Signature": correctSig,
       },
-      body: bodyStr
+      body: bodyStr,
     });
     expect(response.status).toBe(400);
     const data = await response.json();
@@ -108,7 +133,11 @@ describe("Agent HTTP Server & Client Tests", () => {
   });
 
   it("should execute skill successfully on valid signed request", async () => {
-    const bodyObj = { skillName: "search_docs", params: { query: "Monad staking" }, timestamp: Date.now().toString() };
+    const bodyObj = {
+      skillName: "search_docs",
+      params: { query: "Monad staking" },
+      timestamp: Date.now().toString(),
+    };
     const bodyStr = JSON.stringify(bodyObj);
 
     const correctSig = await wallet.signMessage(bodyStr);
@@ -118,9 +147,9 @@ describe("Agent HTTP Server & Client Tests", () => {
       headers: {
         "Content-Type": "application/json",
         "X-Agent-Sender": wallet.address,
-        "X-Agent-Signature": correctSig
+        "X-Agent-Signature": correctSig,
       },
-      body: bodyStr
+      body: bodyStr,
     });
     expect(response.status).toBe(200);
     const data = await response.json();
@@ -131,7 +160,11 @@ describe("Agent HTTP Server & Client Tests", () => {
   it("should return 500 if capability execution throws an error", async () => {
     // "generate_contract" requires parameters (name, symbol, domain)
     // Sending empty params object should trigger validation/execution failure
-    const bodyObj = { skillName: "generate_contract", params: {}, timestamp: Date.now().toString() };
+    const bodyObj = {
+      skillName: "generate_contract",
+      params: {},
+      timestamp: Date.now().toString(),
+    };
     const bodyStr = JSON.stringify(bodyObj);
 
     const correctSig = await wallet.signMessage(bodyStr);
@@ -141,9 +174,9 @@ describe("Agent HTTP Server & Client Tests", () => {
       headers: {
         "Content-Type": "application/json",
         "X-Agent-Sender": wallet.address,
-        "X-Agent-Signature": correctSig
+        "X-Agent-Signature": correctSig,
       },
-      body: bodyStr
+      body: bodyStr,
     });
     expect(response.status).toBe(500);
     const data = await response.json();
@@ -158,12 +191,14 @@ describe("Agent HTTP Server & Client Tests", () => {
       name: "Remote MonadForge Node",
       endpointUrl: `localhost:${testPort}`,
       pricing: {
-        "search_docs": { price: "0.0", token: "MON" }
-      }
+        search_docs: { price: "0.0", token: "MON" },
+      },
     };
     AgentRouter.registerAgent(remoteAgentId, remoteManifest);
 
-    const result = await AgentRouter.invokeAgent(remoteAgentId, "search_docs", { query: "monad parallel execution" });
+    const result = await AgentRouter.invokeAgent(remoteAgentId, "search_docs", {
+      query: "monad parallel execution",
+    });
     expect(result.topMatches).toBeDefined();
   });
 
@@ -174,14 +209,14 @@ describe("Agent HTTP Server & Client Tests", () => {
       name: "Bad Node",
       endpointUrl: `localhost:${testPort}`,
       pricing: {
-        "generate_contract": { price: "0.0", token: "MON" }
-      }
+        generate_contract: { price: "0.0", token: "MON" },
+      },
     };
     AgentRouter.registerAgent(badAgentId, badManifest);
 
     // generate_contract with empty params fails (HTTP 500)
     await expect(
-      AgentRouter.invokeAgent(badAgentId, "generate_contract", {})
+      AgentRouter.invokeAgent(badAgentId, "generate_contract", {}),
     ).rejects.toThrow("HTTP error 500");
   });
 
@@ -192,13 +227,15 @@ describe("Agent HTTP Server & Client Tests", () => {
       name: "Offline Node",
       endpointUrl: `invalid-host-name-xyz:9999`,
       pricing: {
-        "search_docs": { price: "0.0", token: "MON" }
-      }
+        search_docs: { price: "0.0", token: "MON" },
+      },
     };
     AgentRouter.registerAgent(unreachableAgentId, unreachableManifest);
 
     await expect(
-      AgentRouter.invokeAgent(unreachableAgentId, "search_docs", { query: "test" })
+      AgentRouter.invokeAgent(unreachableAgentId, "search_docs", {
+        query: "test",
+      }),
     ).rejects.toThrow();
   });
 
@@ -224,7 +261,8 @@ describe("Agent HTTP Server & Client Tests", () => {
     const dummyServer = new AgentServer();
     await dummyServer.start(13012);
     const origClose = (dummyServer as any).server.close;
-    (dummyServer as any).server.close = (cb: any) => cb(new Error("Close error"));
+    (dummyServer as any).server.close = (cb: any) =>
+      cb(new Error("Close error"));
     await expect(dummyServer.stop()).rejects.toThrow("Close error");
     (dummyServer as any).server.close = origClose;
     await dummyServer.stop();
@@ -237,8 +275,8 @@ describe("Agent HTTP Server & Client Tests", () => {
       name: "Bad Route Node",
       endpointUrl: `localhost:${testPort}/non-existent`,
       pricing: {
-        "search_docs": { price: "0.0", token: "MON" }
-      }
+        search_docs: { price: "0.0", token: "MON" },
+      },
     };
     AgentRouter.registerAgent(badRouteAgentId, badRouteManifest);
 
@@ -247,11 +285,13 @@ describe("Agent HTTP Server & Client Tests", () => {
       ok: false,
       status: 404,
       statusText: "Not Found",
-      json: jest.fn().mockRejectedValue(new Error("No JSON"))
+      json: jest.fn().mockRejectedValue(new Error("No JSON")),
     } as any);
 
     await expect(
-      AgentRouter.invokeAgent(badRouteAgentId, "search_docs", { query: "test" })
+      AgentRouter.invokeAgent(badRouteAgentId, "search_docs", {
+        query: "test",
+      }),
     ).rejects.toThrow("HTTP error 404: Not Found");
 
     globalThis.fetch = originalFetch;

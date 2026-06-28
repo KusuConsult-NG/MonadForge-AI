@@ -7,7 +7,15 @@ import { RepairEngine } from "@monadforge/repair";
 import { SkillCompositionEngine } from "@monadforge/composition";
 import { ArchitectureReviewEngine } from "@monadforge/review";
 import { getConfig } from "@monadforge/sdk";
-import { AgentIdentity, AgentRouter, AgentMarketplace, MonetizedExecutor, MockPaymentAdapter, EthersPaymentAdapter, AgentServer } from "@monadforge/agent";
+import {
+  AgentIdentity,
+  AgentRouter,
+  AgentMarketplace,
+  MonetizedExecutor,
+  MockPaymentAdapter,
+  EthersPaymentAdapter,
+  AgentServer,
+} from "@monadforge/agent";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -56,7 +64,10 @@ export const monadforge = {
     run: async (options: { goal: string; context?: any }): Promise<any> => {
       return agentRuntime.runAgentTask(options.goal, options.context);
     },
-    continue: async (options: { projectId: string; prompt: string }): Promise<any> => {
+    continue: async (options: {
+      projectId: string;
+      prompt: string;
+    }): Promise<any> => {
       return agentRuntime.continueProject(options.projectId, options.prompt);
     },
   },
@@ -64,7 +75,10 @@ export const monadforge = {
     deploy: async (compiledArtifact: any, network?: string): Promise<any> => {
       const pk = getPrivateKey();
       const deployRes = await actionLayer.deployContract(compiledArtifact, pk);
-      if (deployRes.status === "success" && compiledArtifact.metadata?.sources) {
+      if (
+        deployRes.status === "success" &&
+        compiledArtifact.metadata?.sources
+      ) {
         const sources = compiledArtifact.metadata.sources;
         const filePaths = Object.keys(sources);
         if (filePaths.length > 0) {
@@ -91,8 +105,16 @@ export const monadforge = {
       initializerMethod?: string,
     ): Promise<any> => {
       const pk = getPrivateKey();
-      const deployRes = await actionLayer.deployUpgradeable(implementationArtifact, pk, initializerArgs, initializerMethod);
-      if (deployRes.status === "success" && implementationArtifact.metadata?.sources) {
+      const deployRes = await actionLayer.deployUpgradeable(
+        implementationArtifact,
+        pk,
+        initializerArgs,
+        initializerMethod,
+      );
+      if (
+        deployRes.status === "success" &&
+        implementationArtifact.metadata?.sources
+      ) {
         const sources = implementationArtifact.metadata.sources;
         const filePaths = Object.keys(sources);
         if (filePaths.length > 0) {
@@ -104,8 +126,10 @@ export const monadforge = {
               sourceCode,
               { contractName: path.basename(mainFile, ".sol") },
             );
-            deployRes.metadata.implementationVerificationStatus = verifyRes.status;
-            deployRes.metadata.implementationVerificationMessage = verifyRes.metadata.message;
+            deployRes.metadata.implementationVerificationStatus =
+              verifyRes.status;
+            deployRes.metadata.implementationVerificationMessage =
+              verifyRes.metadata.message;
           } catch (e: any) {
             // Ignore/Log failure
           }
@@ -120,7 +144,11 @@ export const monadforge = {
     ): Promise<any> => {
       return actionLayer.verifyDeployment(contractAddress, sourceCode, options);
     },
-    call: async (contractAddress: string, method: string, parameters: any[]): Promise<any> => {
+    call: async (
+      contractAddress: string,
+      method: string,
+      parameters: any[],
+    ): Promise<any> => {
       const pk = getPrivateKey();
       const abi = [
         `function ${method}`,
@@ -130,9 +158,19 @@ export const monadforge = {
         "function stake() public payable",
       ];
       const methodName = method.split("(")[0];
-      return actionLayer.callContract(contractAddress, abi, methodName, parameters, pk);
+      return actionLayer.callContract(
+        contractAddress,
+        abi,
+        methodName,
+        parameters,
+        pk,
+      );
     },
-    mint: async (contractAddress: string, to: string, amount: string): Promise<any> => {
+    mint: async (
+      contractAddress: string,
+      to: string,
+      amount: string,
+    ): Promise<any> => {
       const pk = getPrivateKey();
       return actionLayer.mint(contractAddress, to, amount, pk);
     },
@@ -149,7 +187,12 @@ export const monadforge = {
       }): Promise<any> => {
         // Deterministic flowId from content (not random) so callers can idempotently re-create
         const seed = `${options.amount}:${options.recipient}:${options.tokenAddress ?? "native"}:${Date.now()}`;
-        const flowId = "fl_" + Buffer.from(seed).toString("base64").replace(/[^a-z0-9]/gi, "").substring(0, 14);
+        const flowId =
+          "fl_" +
+          Buffer.from(seed)
+            .toString("base64")
+            .replace(/[^a-z0-9]/gi, "")
+            .substring(0, 14);
         const eip681 = options.tokenAddress
           ? `ethereum:${options.tokenAddress}/transfer?address=${options.recipient}&uint256=${options.amount}`
           : `ethereum:${options.recipient}?value=${options.amount}`;
@@ -173,7 +216,8 @@ export const monadforge = {
       ): Promise<any> => {
         const isTestEnv =
           process.env.NODE_ENV === "test" ||
-          privateKey === "0x0000000000000000000000000000000000000000000000000000000000000000";
+          privateKey ===
+            "0x0000000000000000000000000000000000000000000000000000000000000000";
         if (isTestEnv) {
           return {
             flowId,
@@ -184,7 +228,12 @@ export const monadforge = {
         }
         // Real on-chain transfer via ActionLayer
         /* istanbul ignore next */
-        const result = await actionLayer.transfer(recipient, amount, privateKey, tokenAddress);
+        const result = await actionLayer.transfer(
+          recipient,
+          amount,
+          privateKey,
+          tokenAddress,
+        );
         /* istanbul ignore next */
         return {
           flowId,
@@ -198,7 +247,11 @@ export const monadforge = {
         expectedAmount: string,
         recipient: string,
       ): Promise<boolean> => {
-        if (!txHash.startsWith("0x") || parseFloat(expectedAmount) <= 0 || !recipient.startsWith("0x")) {
+        if (
+          !txHash.startsWith("0x") ||
+          parseFloat(expectedAmount) <= 0 ||
+          !recipient.startsWith("0x")
+        ) {
           return false;
         }
         const isTestEnv = process.env.NODE_ENV === "test";
@@ -235,9 +288,13 @@ export const monadforge = {
       const testDir = options.testDir || "test";
       const scriptsDir = options.scriptsDir || "scripts";
 
-      fs.mkdirSync(path.resolve(process.cwd(), contractsDir), { recursive: true });
+      fs.mkdirSync(path.resolve(process.cwd(), contractsDir), {
+        recursive: true,
+      });
       fs.mkdirSync(path.resolve(process.cwd(), testDir), { recursive: true });
-      fs.mkdirSync(path.resolve(process.cwd(), scriptsDir), { recursive: true });
+      fs.mkdirSync(path.resolve(process.cwd(), scriptsDir), {
+        recursive: true,
+      });
 
       const config = {
         name: projectName,
@@ -270,20 +327,35 @@ export const monadforge = {
   agent: {
     getManifest: () => AgentIdentity.getManifest(),
     getSkillPackages: () => AgentIdentity.getSkillPackages(),
-    invokeAgent: async (targetAgentId: string, skillName: string, params: Record<string, any>, paymentDetails?: any, context?: any) => {
-      return AgentRouter.invokeAgent(targetAgentId, skillName, params, paymentDetails, context);
+    invokeAgent: async (
+      targetAgentId: string,
+      skillName: string,
+      params: Record<string, any>,
+      paymentDetails?: any,
+      context?: any,
+    ) => {
+      return AgentRouter.invokeAgent(
+        targetAgentId,
+        skillName,
+        params,
+        paymentDetails,
+        context,
+      );
     },
     registerAgent: (agentId: string, manifest: any) => {
       AgentRouter.registerAgent(agentId, manifest);
     },
     getPricingManifest: () => AgentMarketplace.getPricingManifest(),
     getReputation: () => AgentMarketplace.getReputation(),
-    getExecutionHistory: (filterAgentId?: string) => AgentMarketplace.getExecutionHistory(filterAgentId),
+    getExecutionHistory: (filterAgentId?: string) =>
+      AgentMarketplace.getExecutionHistory(filterAgentId),
     recordExecution: (record: any) => AgentMarketplace.recordExecution(record),
-    createExecutor: (paymentAdapter?: any) => new MonetizedExecutor(paymentAdapter),
+    createExecutor: (paymentAdapter?: any) =>
+      new MonetizedExecutor(paymentAdapter),
     createMockPaymentAdapter: () => new MockPaymentAdapter(),
-    createEthersPaymentAdapter: (provider?: any) => new EthersPaymentAdapter(provider),
-    createServer: (executor?: any) => new AgentServer(executor)
+    createEthersPaymentAdapter: (provider?: any) =>
+      new EthersPaymentAdapter(provider),
+    createServer: (executor?: any) => new AgentServer(executor),
   },
 };
 export default monadforge;

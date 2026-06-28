@@ -29,7 +29,10 @@ export class AgentServer {
   /**
    * Signs a payload using the agent's private key.
    */
-  public static async signPayload(payload: string, privateKey: string): Promise<string> {
+  public static async signPayload(
+    payload: string,
+    privateKey: string,
+  ): Promise<string> {
     const wallet = new ethers.Wallet(privateKey);
     return wallet.signMessage(payload);
   }
@@ -46,7 +49,10 @@ export class AgentServer {
         // CORS headers
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Agent-Signature, X-Agent-Sender");
+        res.setHeader(
+          "Access-Control-Allow-Headers",
+          "Content-Type, X-Agent-Signature, X-Agent-Sender",
+        );
 
         if (method === "OPTIONS") {
           res.writeHead(204);
@@ -62,7 +68,7 @@ export class AgentServer {
 
         if (method === "POST" && url === "/invoke") {
           let body = "";
-          req.on("data", chunk => {
+          req.on("data", (chunk) => {
             body += chunk;
           });
 
@@ -73,7 +79,12 @@ export class AgentServer {
 
               if (!signature || !sender) {
                 res.writeHead(401, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "Missing authentication headers (X-Agent-Signature or X-Agent-Sender)" }));
+                res.end(
+                  JSON.stringify({
+                    error:
+                      "Missing authentication headers (X-Agent-Signature or X-Agent-Sender)",
+                  }),
+                );
                 return;
               }
 
@@ -83,13 +94,22 @@ export class AgentServer {
                 recoveredSender = AgentServer.verifySignature(body, signature);
               } catch (err: any) {
                 res.writeHead(403, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: `Cryptographic signature validation failed: ${err.message}` }));
+                res.end(
+                  JSON.stringify({
+                    error: `Cryptographic signature validation failed: ${err.message}`,
+                  }),
+                );
                 return;
               }
 
               if (recoveredSender.toLowerCase() !== sender.toLowerCase()) {
                 res.writeHead(403, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "Cryptographic signature validation failed: sender does not match signature" }));
+                res.end(
+                  JSON.stringify({
+                    error:
+                      "Cryptographic signature validation failed: sender does not match signature",
+                  }),
+                );
                 return;
               }
 
@@ -100,22 +120,41 @@ export class AgentServer {
               // Validate request age (prevent replay attacks: max 5 minutes drift)
               const requestTime = parseInt(timestamp, 10);
               const currentTime = Date.now();
-              if (isNaN(requestTime) || Math.abs(currentTime - requestTime) > 300000) {
+              if (
+                isNaN(requestTime) ||
+                Math.abs(currentTime - requestTime) > 300000
+              ) {
                 res.writeHead(400, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "Request expired or timestamp drift is too high" }));
+                res.end(
+                  JSON.stringify({
+                    error: "Request expired or timestamp drift is too high",
+                  }),
+                );
                 return;
               }
 
               // Execute
-              logger.info(`Received A2A invocation request for skill '${skillName}' from ${sender}`);
-              const result = await this.executor.executeSkill(skillName, params, paymentDetails);
+              logger.info(
+                `Received A2A invocation request for skill '${skillName}' from ${sender}`,
+              );
+              const result = await this.executor.executeSkill(
+                skillName,
+                params,
+                paymentDetails,
+              );
 
               res.writeHead(200, { "Content-Type": "application/json" });
               res.end(JSON.stringify({ success: true, result }));
             } catch (err: any) {
               logger.error("Error executing A2A request via server", err);
               res.writeHead(500, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: err.message || "Internal server error during capability execution" }));
+              res.end(
+                JSON.stringify({
+                  error:
+                    err.message ||
+                    "Internal server error during capability execution",
+                }),
+              );
             }
           });
           return;
@@ -130,7 +169,7 @@ export class AgentServer {
         resolve();
       });
 
-      this.server.on("error", err => {
+      this.server.on("error", (err) => {
         logger.error("Server start error", err);
         reject(err);
       });
@@ -142,7 +181,7 @@ export class AgentServer {
       if (!this.server) {
         return resolve();
       }
-      this.server.close(err => {
+      this.server.close((err) => {
         if (err) {
           logger.error("Error closing server", err);
           return reject(err);

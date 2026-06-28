@@ -20,7 +20,8 @@ jest.mock("readline", () => {
   };
 });
 
-let mockMonadforgeJsonContent = '{"name": "mock-token", "contractsDir": "contracts"}';
+let mockMonadforgeJsonContent =
+  '{"name": "mock-token", "contractsDir": "contracts"}';
 
 // Mock fs
 jest.mock("fs", () => {
@@ -87,7 +88,12 @@ jest.mock("@monadforge/actions", () => {
             return {
               status: "failure",
               action: "compile",
-              metadata: { success: false, abi: [], bytecode: "", errors: ["mock compile failure"] },
+              metadata: {
+                success: false,
+                abi: [],
+                bytecode: "",
+                errors: ["mock compile failure"],
+              },
             };
           }
           return {
@@ -125,7 +131,13 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should parse init command", async () => {
-    await program.parseAsync(["node", "monadforge", "init", "-n", "test-project"]);
+    await program.parseAsync([
+      "node",
+      "monadforge",
+      "init",
+      "-n",
+      "test-project",
+    ]);
     expect(program.commands.some((c) => c.name() === "init")).toBe(true);
   });
 
@@ -147,9 +159,11 @@ describe("Simplified CLI Unit Tests", () => {
 
   it("should throw error on build if monadforge.json does not exist", async () => {
     mockExistsSync.mockReturnValueOnce(false); // monadforge.json does not exist
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
     await expect(
       program.parseAsync(["node", "monadforge", "build"]),
     ).rejects.toThrow("Process exited with code 1");
@@ -169,15 +183,22 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should parse audit command", async () => {
-    await program.parseAsync(["node", "monadforge", "audit", "contracts/Token.sol"]);
+    await program.parseAsync([
+      "node",
+      "monadforge",
+      "audit",
+      "contracts/Token.sol",
+    ]);
     expect(program.commands.some((c) => c.name() === "audit")).toBe(true);
   });
 
   it("should throw error on audit command if file does not exist", async () => {
     mockExistsSync.mockReturnValueOnce(false); // file does not exist
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
     await expect(
       program.parseAsync(["node", "monadforge", "audit", "missing.sol"]),
     ).rejects.toThrow("Process exited with code 1");
@@ -185,7 +206,13 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should parse deploy command", async () => {
-    await program.parseAsync(["node", "monadforge", "deploy", "my-project", "-y"]);
+    await program.parseAsync([
+      "node",
+      "monadforge",
+      "deploy",
+      "my-project",
+      "-y",
+    ]);
     expect(program.commands.some((c) => c.name() === "deploy")).toBe(true);
   });
 
@@ -215,9 +242,11 @@ describe("Simplified CLI Unit Tests", () => {
       recommendations: [],
     });
 
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
 
     await expect(
       program.parseAsync(["node", "monadforge", "deploy", "my-project", "-y"]),
@@ -227,9 +256,11 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should block deploy to mainnet in version 1", async () => {
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
     await expect(
       program.parseAsync([
         "node",
@@ -266,11 +297,15 @@ describe("Simplified CLI Unit Tests", () => {
 
   it("should handle init command failure", async () => {
     const { monadforge } = require("@monadforge/ai");
-    monadforge.tools.createProject.mockRejectedValueOnce(new Error("mock init failure"));
+    monadforge.tools.createProject.mockRejectedValueOnce(
+      new Error("mock init failure"),
+    );
 
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
 
     await expect(
       program.parseAsync(["node", "monadforge", "init", "-n", "fail-project"]),
@@ -282,9 +317,11 @@ describe("Simplified CLI Unit Tests", () => {
   it("should handle build command compilation failure", async () => {
     compileSuccess = false;
 
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
 
     await expect(
       program.parseAsync(["node", "monadforge", "build"]),
@@ -309,9 +346,11 @@ describe("Simplified CLI Unit Tests", () => {
       message: "mock continue failure",
     });
 
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
 
     await expect(
       program.parseAsync(["node", "monadforge", "continue", "my-project"]),
@@ -325,12 +364,21 @@ describe("Simplified CLI Unit Tests", () => {
     monadforge.tools.audit.mockResolvedValueOnce({
       riskScore: 50,
       issues: [
-        { severity: "High", title: "Reentrancy", description: "Unprotected withdraw" }
+        {
+          severity: "High",
+          title: "Reentrancy",
+          description: "Unprotected withdraw",
+        },
       ],
-      recommendations: []
+      recommendations: [],
     });
 
-    await program.parseAsync(["node", "monadforge", "audit", "contracts/Token.sol"]);
+    await program.parseAsync([
+      "node",
+      "monadforge",
+      "audit",
+      "contracts/Token.sol",
+    ]);
     expect(monadforge.tools.audit).toHaveBeenCalled();
   });
 
@@ -338,16 +386,24 @@ describe("Simplified CLI Unit Tests", () => {
     const mockReaddir = fs.readdirSync as jest.Mock;
     mockReaddir.mockReturnValueOnce([]); // no files
 
-    await program.parseAsync(["node", "monadforge", "deploy", "my-project", "-y"]);
+    await program.parseAsync([
+      "node",
+      "monadforge",
+      "deploy",
+      "my-project",
+      "-y",
+    ]);
     expect(mockReaddir).toHaveBeenCalled();
   });
 
   it("should handle deploy command compilation failure", async () => {
     compileSuccess = false;
 
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
 
     await expect(
       program.parseAsync(["node", "monadforge", "deploy", "my-project", "-y"]),
@@ -361,9 +417,11 @@ describe("Simplified CLI Unit Tests", () => {
     const { monadforge } = require("@monadforge/ai");
     monadforge.actions.deploy.mockResolvedValueOnce({ status: "failed" });
 
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
 
     await expect(
       program.parseAsync(["node", "monadforge", "deploy", "my-project", "-y"]),
@@ -409,9 +467,11 @@ describe("Simplified CLI Unit Tests", () => {
       success: false,
     });
 
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
 
     await expect(
       program.parseAsync(["node", "monadforge", "continue", "my-project"]),
@@ -435,9 +495,11 @@ describe("Simplified CLI Unit Tests", () => {
       recommendations: [],
     });
 
-    const exitSpy = jest.spyOn(process, "exit").mockImplementationOnce((code) => {
-      throw new Error(`Process exited with code ${code}`);
-    });
+    const exitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementationOnce((code) => {
+        throw new Error(`Process exited with code ${code}`);
+      });
 
     await expect(
       program.parseAsync(["node", "monadforge", "deploy", "my-project", "-y"]),
@@ -454,7 +516,13 @@ describe("Simplified CLI Unit Tests", () => {
       // transactionHash: undefined
     });
 
-    await program.parseAsync(["node", "monadforge", "deploy", "my-project", "-y"]);
+    await program.parseAsync([
+      "node",
+      "monadforge",
+      "deploy",
+      "my-project",
+      "-y",
+    ]);
     expect(monadforge.actions.deploy).toHaveBeenCalled();
   });
 
@@ -467,26 +535,44 @@ describe("Simplified CLI Unit Tests", () => {
         transactionHash: "0xabc",
         gasUsed: "1000",
         verificationStatus: "success",
-        verificationMessage: "Verified successfully on MonadScan (MOCK mode)"
-      }
+        verificationMessage: "Verified successfully on MonadScan (MOCK mode)",
+      },
     });
 
     const consoleSpy = jest.spyOn(console, "log").mockImplementation();
-    await program.parseAsync(["node", "monadforge", "deploy", "my-project", "-y"]);
+    await program.parseAsync([
+      "node",
+      "monadforge",
+      "deploy",
+      "my-project",
+      "-y",
+    ]);
     expect(monadforge.actions.deploy).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Verification: Verified successfully on MonadScan (MOCK mode)"));
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "Verification: Verified successfully on MonadScan (MOCK mode)",
+      ),
+    );
     consoleSpy.mockRestore();
   });
 
   it("should handle monadforge.json with missing name and contractsDir in deploy and continue commands", async () => {
-    mockMonadforgeJsonContent = '{}';
+    mockMonadforgeJsonContent = "{}";
     const { monadforge } = require("@monadforge/ai");
-    monadforge.actions.deploy.mockResolvedValueOnce({ status: "success", contractAddress: "0x123", transactionHash: "0xabc" });
-    monadforge.engine.continue.mockResolvedValueOnce({ success: true, message: "OK" });
+    monadforge.actions.deploy.mockResolvedValueOnce({
+      status: "success",
+      contractAddress: "0x123",
+      transactionHash: "0xabc",
+    });
+    monadforge.engine.continue.mockResolvedValueOnce({
+      success: true,
+      message: "OK",
+    });
 
     await program.parseAsync(["node", "monadforge", "deploy", "-y"]);
     await program.parseAsync(["node", "monadforge", "continue"]);
 
-    mockMonadforgeJsonContent = '{"name": "mock-token", "contractsDir": "contracts"}';
+    mockMonadforgeJsonContent =
+      '{"name": "mock-token", "contractsDir": "contracts"}';
   });
 });

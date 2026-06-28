@@ -250,12 +250,14 @@ describe("MemoryEngine Unit Tests", () => {
     };
 
     // Should succeed
-    await expect(engine.saveExecutionTrace("test-project-123", validTrace)).resolves.not.toThrow();
+    await expect(
+      engine.saveExecutionTrace("test-project-123", validTrace),
+    ).resolves.not.toThrow();
 
     // Verify file exists
     const traceDir = path.resolve(process.cwd(), ".monadforge", "traces");
     const files = fs.readdirSync(traceDir);
-    const traceFile = files.find(f => f.includes("test-project-123"));
+    const traceFile = files.find((f) => f.includes("test-project-123"));
     expect(traceFile).toBeDefined();
 
     // Clean up trace file
@@ -269,7 +271,8 @@ describe("MemoryEngine Unit Tests", () => {
       projectId: "test-project-123",
       timestamp: new Date().toISOString(),
     };
-    await expect(engine.saveExecutionTrace("test-project-123", invalidTrace)).rejects.toThrow();
+    await expect(
+      engine.saveExecutionTrace("test-project-123", invalidTrace),
+    ).rejects.toThrow();
   });
 });
-

@@ -92,7 +92,9 @@ export interface PrimitiveOutput<T = any> {
 }
 
 export interface IDeploymentEngine {
-  compile(projectFiles: Record<string, string>): Promise<PrimitiveOutput<CompilationResult>>;
+  compile(
+    projectFiles: Record<string, string>,
+  ): Promise<PrimitiveOutput<CompilationResult>>;
   deployToTestnet(
     compiledArtifact: PrimitiveOutput<CompilationResult>,
     deployerPrivateKey: string,
@@ -102,7 +104,11 @@ export interface IDeploymentEngine {
     deployerPrivateKey: string,
     initializerArgs?: any[],
     initializerMethod?: string,
-  ): Promise<PrimitiveOutput<DeploymentResult & { proxyAddress: string; implementationAddress: string }>>;
+  ): Promise<
+    PrimitiveOutput<
+      DeploymentResult & { proxyAddress: string; implementationAddress: string }
+    >
+  >;
   verifyDeployment(
     contractAddress: string,
     sourceCode: string,

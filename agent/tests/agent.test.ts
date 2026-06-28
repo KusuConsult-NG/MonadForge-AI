@@ -1,10 +1,20 @@
-import { AgentIdentity, MockPaymentAdapter, MonetizedExecutor, AgentRouter, AgentMarketplace, EthersPaymentAdapter, calculateDynamicPrice } from "../src/index";
+import {
+  AgentIdentity,
+  MockPaymentAdapter,
+  MonetizedExecutor,
+  AgentRouter,
+  AgentMarketplace,
+  EthersPaymentAdapter,
+  calculateDynamicPrice,
+} from "../src/index";
 import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
-import { TransactionQueue } from "../../actions/src/index";
+import { TransactionQueue, DeploymentEngine } from "../../actions/src/index";
 
-
+process.env.PAYMENT_RECEIVER_ADDRESS = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+process.env.DEPLOYER_PRIVATE_KEY = "0x0123456789012345678901234567890123456789012345678901234567890123";
+require("@monadforge/sdk").resetConfigForTesting();
 
 jest.mock("@monadforge/sdk", () => {
   const actualSdk = jest.requireActual("@monadforge/sdk");
@@ -12,7 +22,9 @@ jest.mock("@monadforge/sdk", () => {
     ...actualSdk,
     getConfig: jest.fn().mockImplementation(() => {
       return {
-        DEPLOYER_PRIVATE_KEY: process.env.TEST_DEPLOYER_PRIVATE_KEY || "0x0000000000000000000000000000000000000000000000000000000000000000",
+        DEPLOYER_PRIVATE_KEY:
+          process.env.TEST_DEPLOYER_PRIVATE_KEY ||
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
         MONAD_RPC_URL: "https://testnet-rpc.monad.xyz",
         MONAD_RPC_URL_FALLBACK: "https://rpc-devnet.monad.xyz",
         NODE_ENV: "test",
@@ -33,13 +45,16 @@ describe("Agent Package Unit Tests", () => {
       expect(manifest.agentId).toBe("monadforge-ai");
       expect(manifest.name).toBe("MonadForge AI Agent");
       expect(manifest.skills).toContain("generate_contract");
-      expect(manifest.pricing.run_audit).toEqual({ price: "1.0", token: "MON" });
+      expect(manifest.pricing.run_audit).toEqual({
+        price: "1.0",
+        token: "MON",
+      });
     });
 
     it("should return all skill packages", () => {
       const pkgs = AgentIdentity.getSkillPackages();
       expect(pkgs.length).toBeGreaterThan(0);
-      expect(pkgs.some(p => p.skill === "generate_contract")).toBe(true);
+      expect(pkgs.some((p) => p.skill === "generate_contract")).toBe(true);
     });
 
     it("should get a specific skill package", () => {
@@ -49,7 +64,9 @@ describe("Agent Package Unit Tests", () => {
     });
 
     it("should throw error if skill package is not found", () => {
-      expect(() => AgentIdentity.getSkillPackage("non_existent")).toThrow("Skill package not found");
+      expect(() => AgentIdentity.getSkillPackage("non_existent")).toThrow(
+        "Skill package not found",
+      );
     });
   });
 
@@ -71,25 +88,35 @@ describe("Agent Package Unit Tests", () => {
     });
 
     it("should invoke local agent monadforge-ai or monadforge", async () => {
-      const res1 = await AgentRouter.invokeAgent("monadforge-ai", "search_docs", { query: "monad" });
-      const res2 = await AgentRouter.invokeAgent("monadforge", "search_docs", { query: "monad" });
+      const res1 = await AgentRouter.invokeAgent(
+        "monadforge-ai",
+        "search_docs",
+        { query: "monad" },
+      );
+      const res2 = await AgentRouter.invokeAgent("monadforge", "search_docs", {
+        query: "monad",
+      });
       expect(res1.topMatches).toBeDefined();
       expect(res2.topMatches).toBeDefined();
     });
 
     it("should reject invocation for unknown remote agent", async () => {
       await expect(
-        AgentRouter.invokeAgent("unknown-agent", "search_docs", { query: "test" })
+        AgentRouter.invokeAgent("unknown-agent", "search_docs", {
+          query: "test",
+        }),
       ).rejects.toThrow("Target agent 'unknown-agent' not found in registry.");
     });
 
     it("should invoke remote registered agent via simulation", async () => {
       const mockManifest = {
         agentId: "remote-agent",
-        pricing: { "search_docs": { price: "0.0", token: "MON" } }
+        pricing: { search_docs: { price: "0.0", token: "MON" } },
       };
       AgentRouter.registerAgent("remote-agent", mockManifest);
-      const res = await AgentRouter.invokeAgent("remote-agent", "search_docs", { query: "test" });
+      const res = await AgentRouter.invokeAgent("remote-agent", "search_docs", {
+        query: "test",
+      });
       expect(res.status).toBe("success");
       expect(res.output.agentId).toBe("remote-agent");
     });
@@ -97,11 +124,13 @@ describe("Agent Package Unit Tests", () => {
     it("should reject remote invocation if payment is required but missing", async () => {
       const mockManifest = {
         agentId: "remote-agent",
-        pricing: { "run_audit": { price: "1.0", token: "MON" } }
+        pricing: { run_audit: { price: "1.0", token: "MON" } },
       };
       AgentRouter.registerAgent("remote-agent", mockManifest);
       await expect(
-        AgentRouter.invokeAgent("remote-agent", "run_audit", { code: "contract X {}" })
+        AgentRouter.invokeAgent("remote-agent", "run_audit", {
+          code: "contract X {}",
+        }),
       ).rejects.toThrow("requires payment");
     });
 
@@ -110,11 +139,15 @@ describe("Agent Package Unit Tests", () => {
       const mockPeerManifest = {
         agentId: "temp-persisted-agent",
         name: "Temp Node",
-        pricing: {}
+        pricing: {},
       };
       AgentRouter.registerAgent("temp-persisted-agent", mockPeerManifest);
 
-      const peersFilePath = path.resolve(process.cwd(), ".monadforge", "peers.json");
+      const peersFilePath = path.resolve(
+        process.cwd(),
+        ".monadforge",
+        "peers.json",
+      );
       expect(fs.existsSync(peersFilePath)).toBe(true);
       const content = fs.readFileSync(peersFilePath, "utf-8");
       const data = JSON.parse(content);
@@ -127,7 +160,11 @@ describe("Agent Package Unit Tests", () => {
     it("should reload registered agents from file system on initialization", () => {
       AgentRouter.clearRegistry();
 
-      const peersFilePath = path.resolve(process.cwd(), ".monadforge", "peers.json");
+      const peersFilePath = path.resolve(
+        process.cwd(),
+        ".monadforge",
+        "peers.json",
+      );
       const dirPath = path.dirname(peersFilePath);
       if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
@@ -135,15 +172,21 @@ describe("Agent Package Unit Tests", () => {
       const mockPeerManifest = {
         agentId: "offline-persisted-agent",
         name: "Offline Persisted Node",
-        pricing: {}
+        pricing: {},
       };
-      fs.writeFileSync(peersFilePath, JSON.stringify({
-        "offline-persisted-agent": mockPeerManifest
-      }), "utf-8");
+      fs.writeFileSync(
+        peersFilePath,
+        JSON.stringify({
+          "offline-persisted-agent": mockPeerManifest,
+        }),
+        "utf-8",
+      );
 
       const registered = AgentRouter.getRegisteredAgents();
       expect(registered["offline-persisted-agent"]).toBeDefined();
-      expect(registered["offline-persisted-agent"].name).toBe("Offline Persisted Node");
+      expect(registered["offline-persisted-agent"].name).toBe(
+        "Offline Persisted Node",
+      );
 
       AgentRouter.clearRegistry();
     });
@@ -166,7 +209,7 @@ describe("Agent Package Unit Tests", () => {
         agentId: "monadforge-ai",
         skillName: "search_docs",
         durationMs: 150,
-        status: "success"
+        status: "success",
       });
 
       const allHistory = AgentMarketplace.getExecutionHistory();
@@ -176,7 +219,8 @@ describe("Agent Package Unit Tests", () => {
       const filtered = AgentMarketplace.getExecutionHistory("non_existent");
       expect(filtered.length).toBe(0);
 
-      const filteredSelf = AgentMarketplace.getExecutionHistory("monadforge-ai");
+      const filteredSelf =
+        AgentMarketplace.getExecutionHistory("monadforge-ai");
       expect(filteredSelf.length).toBe(1);
     });
   });
@@ -201,7 +245,11 @@ describe("Agent Package Unit Tests", () => {
       expect(adapter.getChargeStatus(chargeId)).toBe("paid");
 
       // Execute skill
-      const result = await executor.executeSkill("run_audit", { code: "contract X {}" }, { chargeId, txHash: "0x123456789" });
+      const result = await executor.executeSkill(
+        "run_audit",
+        { code: "contract X {}" },
+        { chargeId, txHash: "0x123456789" },
+      );
       expect(result.issues).toBeDefined();
       expect(adapter.getChargeStatus(chargeId)).toBe("settled");
     });
@@ -214,25 +262,35 @@ describe("Agent Package Unit Tests", () => {
     });
 
     it("should throw error if charge is not found during verify or settle", async () => {
-      await expect(adapter.verifyPayment("non_existent", "0x123")).rejects.toThrow("Charge not found");
-      await expect(adapter.settleExecution("non_existent")).rejects.toThrow("Charge not found");
+      await expect(
+        adapter.verifyPayment("non_existent", "0x123"),
+      ).rejects.toThrow("Charge not found");
+      await expect(adapter.settleExecution("non_existent")).rejects.toThrow(
+        "Charge not found",
+      );
     });
 
     it("should throw error if trying to settle unpaid charge", async () => {
       const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
-      await expect(adapter.settleExecution(chargeId)).rejects.toThrow("Cannot settle unpaid charge");
+      await expect(adapter.settleExecution(chargeId)).rejects.toThrow(
+        "Cannot settle unpaid charge",
+      );
     });
 
     it("should reject execution of paid skill without payment details", async () => {
       await expect(
-        executor.executeSkill("run_audit", { code: "contract X {}" })
+        executor.executeSkill("run_audit", { code: "contract X {}" }),
       ).rejects.toThrow("requires payment");
     });
 
     it("should reject execution of paid skill if payment verification fails", async () => {
       const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
       await expect(
-        executor.executeSkill("run_audit", { code: "contract X {}" }, { chargeId, txHash: "invalid_hash" })
+        executor.executeSkill(
+          "run_audit",
+          { code: "contract X {}" },
+          { chargeId, txHash: "invalid_hash" },
+        ),
       ).rejects.toThrow("Payment verification failed");
     });
   });
@@ -266,13 +324,20 @@ describe("Agent Package Unit Tests", () => {
 
     it("should verify ERC-20 payment successfully", async () => {
       const tokenAddress = "0x1234567890123456789012345678901234567890";
-      const chargeId = await adapter.createCharge("generate_contract", "0.5", tokenAddress);
+      const chargeId = await adapter.createCharge(
+        "generate_contract",
+        "0.5",
+        tokenAddress,
+      );
 
       mockProvider.getTransaction.mockResolvedValue({
         to: tokenAddress,
       });
 
-      const receiverTopic = "0x" + "0".repeat(24) + "742d35Cc6634C0532925a3b844Bc454e4438f44e".toLowerCase();
+      const receiverTopic =
+        "0x" +
+        "0".repeat(24) +
+        "742d35Cc6634C0532925a3b844Bc454e4438f44e".toLowerCase();
       const amountData = "0x" + "0".repeat(15) + "de0b6b3a7640000"; // 1 ether in hex, padded
 
       mockProvider.getTransactionReceipt.mockResolvedValue({
@@ -305,7 +370,9 @@ describe("Agent Package Unit Tests", () => {
 
     it("should reject payment verification if transaction receipt is not found", async () => {
       const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
-      mockProvider.getTransaction.mockResolvedValue({ to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e" });
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+      });
       mockProvider.getTransactionReceipt.mockResolvedValue(null);
 
       const result = await adapter.verifyPayment(chargeId, "0x12345");
@@ -314,7 +381,9 @@ describe("Agent Package Unit Tests", () => {
 
     it("should reject payment verification if transaction status is failed", async () => {
       const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
-      mockProvider.getTransaction.mockResolvedValue({ to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e" });
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+      });
       mockProvider.getTransactionReceipt.mockResolvedValue({ status: 0 });
 
       const result = await adapter.verifyPayment(chargeId, "0x12345");
@@ -347,7 +416,11 @@ describe("Agent Package Unit Tests", () => {
 
     it("should reject payment verification if ERC-20 Transfer log recipient is incorrect", async () => {
       const tokenAddress = "0x1234567890123456789012345678901234567890";
-      const chargeId = await adapter.createCharge("generate_contract", "0.5", tokenAddress);
+      const chargeId = await adapter.createCharge(
+        "generate_contract",
+        "0.5",
+        tokenAddress,
+      );
 
       mockProvider.getTransaction.mockResolvedValue({ to: tokenAddress });
       mockProvider.getTransactionReceipt.mockResolvedValue({
@@ -358,7 +431,9 @@ describe("Agent Package Unit Tests", () => {
             topics: [
               ethers.id("Transfer(address,address,uint256)"),
               "0x" + "0".repeat(64),
-              "0x" + "0".repeat(24) + "0000000000000000000000000000000000000000",
+              "0x" +
+                "0".repeat(24) +
+                "0000000000000000000000000000000000000000",
             ],
             data: "0x" + "0".repeat(15) + "de0b6b3a7640000",
           },
@@ -389,7 +464,7 @@ describe("Agent Package Unit Tests", () => {
             }),
             getTransactionReceipt: jest.fn().mockResolvedValue({
               status: 1,
-              logs: []
+              logs: [],
             }),
           } as any;
         });
@@ -403,10 +478,17 @@ describe("Agent Package Unit Tests", () => {
 
     it("should cover fallback RPC path for ERC-20 token", async () => {
       const tokenAddress = "0x1234567890123456789012345678901234567890";
-      const chargeId = await adapter.createCharge("generate_contract", "0.5", tokenAddress);
+      const chargeId = await adapter.createCharge(
+        "generate_contract",
+        "0.5",
+        tokenAddress,
+      );
       mockProvider.getTransaction.mockRejectedValue(new Error("RPC Timeout"));
 
-      const receiverTopic = "0x" + "0".repeat(24) + "742d35Cc6634C0532925a3b844Bc454e4438f44e".toLowerCase();
+      const receiverTopic =
+        "0x" +
+        "0".repeat(24) +
+        "742d35Cc6634C0532925a3b844Bc454e4438f44e".toLowerCase();
       const amountData = "0x" + "0".repeat(15) + "de0b6b3a7640000";
 
       const connectSpy = jest
@@ -426,7 +508,7 @@ describe("Agent Package Unit Tests", () => {
                   ],
                   data: amountData,
                 },
-              ]
+              ],
             }),
           } as any;
         });
@@ -444,11 +526,14 @@ describe("Agent Package Unit Tests", () => {
     });
 
     it("should throw error if charge is not found during verifyPayment", async () => {
-      await expect(adapter.verifyPayment("non_existent", "0x123")).rejects.toThrow("Charge not found");
+      await expect(
+        adapter.verifyPayment("non_existent", "0x123"),
+      ).rejects.toThrow("Charge not found");
     });
 
     it("should check PAYMENT_RECEIVER_ADDRESS from process.env", async () => {
-      process.env.PAYMENT_RECEIVER_ADDRESS = "0x8888888888888888888888888888888888888888";
+      process.env.PAYMENT_RECEIVER_ADDRESS =
+        "0x8888888888888888888888888888888888888888";
       const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
       mockProvider.getTransaction.mockResolvedValue({
         to: "0x8888888888888888888888888888888888888888",
@@ -461,7 +546,8 @@ describe("Agent Package Unit Tests", () => {
     });
 
     it("should derive receiver address from DEPLOYER_PRIVATE_KEY if valid", async () => {
-      process.env.TEST_DEPLOYER_PRIVATE_KEY = "0x0123456789012345678901234567890123456789012345678901234567890123";
+      process.env.TEST_DEPLOYER_PRIVATE_KEY =
+        "0x0123456789012345678901234567890123456789012345678901234567890123";
 
       const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
       // Derived address of 0x0123456789012345678901234567890123456789012345678901234567890123 is 0x14791697260E4c9A71f18484C9f997B308e59325
@@ -499,7 +585,9 @@ describe("Agent Package Unit Tests", () => {
         .spyOn(ethers, "JsonRpcProvider")
         .mockImplementation(() => {
           return {
-            getTransaction: jest.fn().mockRejectedValue(new Error("Fallback RPC Timeout")),
+            getTransaction: jest
+              .fn()
+              .mockRejectedValue(new Error("Fallback RPC Timeout")),
           } as any;
         });
 
@@ -511,7 +599,11 @@ describe("Agent Package Unit Tests", () => {
 
     it("should reject payment verification if ERC-20 transfer log has incorrect token address", async () => {
       const tokenAddress = "0x1234567890123456789012345678901234567890";
-      const chargeId = await adapter.createCharge("generate_contract", "0.5", tokenAddress);
+      const chargeId = await adapter.createCharge(
+        "generate_contract",
+        "0.5",
+        tokenAddress,
+      );
 
       mockProvider.getTransaction.mockResolvedValue({ to: tokenAddress });
       mockProvider.getTransactionReceipt.mockResolvedValue({
@@ -522,7 +614,9 @@ describe("Agent Package Unit Tests", () => {
             topics: [
               ethers.id("Transfer(address,address,uint256)"),
               "0x" + "0".repeat(64),
-              "0x" + "0".repeat(24) + "742d35Cc6634C0532925a3b844Bc454e4438f44e",
+              "0x" +
+                "0".repeat(24) +
+                "742d35Cc6634C0532925a3b844Bc454e4438f44e",
             ],
             data: "0x" + "0".repeat(15) + "de0b6b3a7640000",
           },
@@ -534,12 +628,16 @@ describe("Agent Package Unit Tests", () => {
     });
 
     it("should throw error in settleExecution if charge is not found", async () => {
-      await expect(adapter.settleExecution("non_existent")).rejects.toThrow("Charge not found");
+      await expect(adapter.settleExecution("non_existent")).rejects.toThrow(
+        "Charge not found",
+      );
     });
 
     it("should throw error in settleExecution if charge is unpaid", async () => {
       const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
-      await expect(adapter.settleExecution(chargeId)).rejects.toThrow("Cannot settle unpaid charge");
+      await expect(adapter.settleExecution(chargeId)).rejects.toThrow(
+        "Cannot settle unpaid charge",
+      );
     });
 
     it("should settle execution correctly", async () => {
@@ -557,7 +655,11 @@ describe("Agent Package Unit Tests", () => {
 
     it("should instantiate and verify using default provider", async () => {
       const defaultAdapter = new EthersPaymentAdapter();
-      const chargeId = await defaultAdapter.createCharge("run_audit", "1.0", "MON");
+      const chargeId = await defaultAdapter.createCharge(
+        "run_audit",
+        "1.0",
+        "MON",
+      );
 
       const connectSpy = jest
         .spyOn(ethers, "JsonRpcProvider")
@@ -585,13 +687,19 @@ describe("Agent Package Unit Tests", () => {
 
     it("should process write operations sequentially via TransactionQueue", async () => {
       const order: number[] = [];
-      const p1 = TransactionQueue.enqueue("0x0123456789012345678901234567890123456789012345678901234567890123", async () => {
-        await new Promise(r => setTimeout(r, 50));
-        order.push(1);
-      });
-      const p2 = TransactionQueue.enqueue("0x0123456789012345678901234567890123456789012345678901234567890123", async () => {
-        order.push(2);
-      });
+      const p1 = TransactionQueue.enqueue(
+        "0x0123456789012345678901234567890123456789012345678901234567890123",
+        async () => {
+          await new Promise((r) => setTimeout(r, 50));
+          order.push(1);
+        },
+      );
+      const p2 = TransactionQueue.enqueue(
+        "0x0123456789012345678901234567890123456789012345678901234567890123",
+        async () => {
+          order.push(2);
+        },
+      );
       await Promise.all([p1, p2]);
       expect(order).toEqual([1, 2]);
     });
@@ -599,14 +707,24 @@ describe("Agent Package Unit Tests", () => {
     it("should refund payment if skill execution fails", async () => {
       const errorAdapter = new MockPaymentAdapter();
       const errorExecutor = new MonetizedExecutor(errorAdapter);
-      
-      jest.spyOn((errorExecutor as any).skills, "route").mockRejectedValue(new Error("Execution Failed"));
 
-      const chargeId = await errorAdapter.createCharge("run_audit", "1.0", "MON");
+      jest
+        .spyOn((errorExecutor as any).skills, "route")
+        .mockRejectedValue(new Error("Execution Failed"));
+
+      const chargeId = await errorAdapter.createCharge(
+        "run_audit",
+        "1.0",
+        "MON",
+      );
       await errorAdapter.verifyPayment(chargeId, "0x1234567890");
-      
+
       await expect(
-        errorExecutor.executeSkill("run_audit", { code: "contract X {}" }, { chargeId, txHash: "0x1234567890" })
+        errorExecutor.executeSkill(
+          "run_audit",
+          { code: "contract X {}" },
+          { chargeId, txHash: "0x1234567890" },
+        ),
       ).rejects.toThrow("Execution Failed");
 
       expect(errorAdapter.getChargeStatus(chargeId)).toBe("refunded");
@@ -614,21 +732,34 @@ describe("Agent Package Unit Tests", () => {
 
     it("should calculate dynamic prices based on code size and congestion", () => {
       const basePrice = "1.0";
-      
-      const price1 = calculateDynamicPrice("run_audit", { code: "" }, basePrice);
+
+      const price1 = calculateDynamicPrice(
+        "run_audit",
+        { code: "" },
+        basePrice,
+      );
       expect(parseFloat(price1)).toBe(1.0);
 
-      const price2 = calculateDynamicPrice("run_audit", { code: "a".repeat(5000) }, basePrice);
+      const price2 = calculateDynamicPrice(
+        "run_audit",
+        { code: "a".repeat(5000) },
+        basePrice,
+      );
       expect(parseFloat(price2)).toBeCloseTo(1.5);
 
       process.env.GAS_CONGESTION = "high";
-      const price3 = calculateDynamicPrice("run_audit", { code: "" }, basePrice);
+      const price3 = calculateDynamicPrice(
+        "run_audit",
+        { code: "" },
+        basePrice,
+      );
       expect(parseFloat(price3)).toBeCloseTo(1.5);
       delete process.env.GAS_CONGESTION;
     });
 
     it("should query agent from on-chain Registry contract fallback", async () => {
-      process.env.AGENT_REGISTRY_ADDRESS = "0xRegistryAddress0000000000000000000000000";
+      process.env.AGENT_REGISTRY_ADDRESS =
+        "0xRegistryAddress0000000000000000000000000";
       AgentRouter.clearRegistry();
 
       const connectSpy = jest
@@ -639,8 +770,8 @@ describe("Agent Package Unit Tests", () => {
               "On-Chain Agent",
               "",
               JSON.stringify({
-                pricing: { "search_docs": { price: "0.0", token: "MON" } }
-              })
+                pricing: { search_docs: { price: "0.0", token: "MON" } },
+              }),
             ]),
           } as any;
         });
@@ -648,7 +779,11 @@ describe("Agent Package Unit Tests", () => {
       const registeredBefore = AgentRouter.getRegisteredAgents();
       expect(registeredBefore["on-chain-agent"]).toBeUndefined();
 
-      const res = await AgentRouter.invokeAgent("on-chain-agent", "search_docs", { query: "test" });
+      const res = await AgentRouter.invokeAgent(
+        "on-chain-agent",
+        "search_docs",
+        { query: "test" },
+      );
       expect(res.status).toBe("success");
 
       const registeredAfter = AgentRouter.getRegisteredAgents();
@@ -671,7 +806,7 @@ describe("Agent Package Unit Tests", () => {
       const result = await testExecutor.executeSkill(
         "run_audit",
         { code: "pragma solidity ^0.8.20; contract Test {}" },
-        { chargeId, txHash: "0x123" }
+        { chargeId, txHash: "0x123" },
       );
 
       expect(result.attestation).toBeDefined();
@@ -683,28 +818,42 @@ describe("Agent Package Unit Tests", () => {
           agentId: result.attestation.agentId,
           skillName: "run_audit",
           timestamp: result.attestation.timestamp,
-          outputHash: result.attestation.outputHash
+          outputHash: result.attestation.outputHash,
         }),
-        result.attestation.signature
+        result.attestation.signature,
       );
       expect(recovered.startsWith("0x")).toBe(true);
     });
 
     it("should throw error in cancelCharge if charge is not found", async () => {
-      await expect(adapter.cancelCharge("non_existent")).rejects.toThrow("Charge not found");
+      await expect(adapter.cancelCharge("non_existent")).rejects.toThrow(
+        "Charge not found",
+      );
     });
 
     it("should catch and log error if cancelCharge throws inside executeSkill", async () => {
       const errorAdapter = new MockPaymentAdapter();
       const errorExecutor = new MonetizedExecutor(errorAdapter);
-      jest.spyOn((errorExecutor as any).skills, "route").mockRejectedValue(new Error("Execution Failed"));
-      jest.spyOn(errorAdapter, "cancelCharge").mockRejectedValue(new Error("Cancel Failed"));
+      jest
+        .spyOn((errorExecutor as any).skills, "route")
+        .mockRejectedValue(new Error("Execution Failed"));
+      jest
+        .spyOn(errorAdapter, "cancelCharge")
+        .mockRejectedValue(new Error("Cancel Failed"));
 
-      const chargeId = await errorAdapter.createCharge("run_audit", "1.0", "MON");
+      const chargeId = await errorAdapter.createCharge(
+        "run_audit",
+        "1.0",
+        "MON",
+      );
       await errorAdapter.verifyPayment(chargeId, "0x1234567890");
 
       await expect(
-        errorExecutor.executeSkill("run_audit", { code: "contract X {}" }, { chargeId, txHash: "0x1234567890" })
+        errorExecutor.executeSkill(
+          "run_audit",
+          { code: "contract X {}" },
+          { chargeId, txHash: "0x1234567890" },
+        ),
       ).rejects.toThrow("Execution Failed");
     });
 
@@ -716,32 +865,137 @@ describe("Agent Package Unit Tests", () => {
       });
       mockProvider.getTransactionReceipt.mockResolvedValue({ status: 1 });
 
-      jest.spyOn(ethers, "Wallet").mockImplementationOnce(() => {
+      const walletSpy = jest.spyOn(ethers, "Wallet").mockImplementationOnce(() => {
         throw new Error("Wallet Sign Failed");
       });
 
-      const testExecutor = new MonetizedExecutor(adapter);
-      const result = await testExecutor.executeSkill(
-        "run_audit",
-        { code: "pragma solidity ^0.8.20; contract Test {}" },
-        { chargeId, txHash: "0x123" }
-      );
-      expect(result.attestation).toBeUndefined();
+      try {
+        const testExecutor = new MonetizedExecutor(adapter);
+        const result = await testExecutor.executeSkill(
+          "run_audit",
+          { code: "pragma solidity ^0.8.20; contract Test {}" },
+          { chargeId, txHash: "0x123" },
+        );
+        expect(result.attestation).toBeUndefined();
+      } finally {
+        walletSpy.mockRestore();
+      }
     });
-
 
     it("should handle error in on-chain Registry fallback gracefully", async () => {
       process.env.AGENT_REGISTRY_ADDRESS = "0xRegistryAddress";
-      const mockContract = jest.spyOn(ethers, "Contract").mockImplementationOnce(() => {
-        throw new Error("Connection failed");
-      });
-      
+      const mockContract = jest
+        .spyOn(ethers, "Contract")
+        .mockImplementationOnce(() => {
+          throw new Error("Connection failed");
+        });
+
       await expect(
-        AgentRouter.invokeAgent("on-chain-agent-fail", "search_docs", { query: "test" })
+        AgentRouter.invokeAgent("on-chain-agent-fail", "search_docs", {
+          query: "test",
+        }),
       ).rejects.toThrow("not found in registry");
 
       mockContract.mockRestore();
       delete process.env.AGENT_REGISTRY_ADDRESS;
+    });
+
+    it("should compile AgentVerifier solidity contract successfully", async () => {
+      const engine = new DeploymentEngine();
+      const contractPath = path.resolve(process.cwd(), "contracts", "AgentVerifier.sol");
+      const content = fs.readFileSync(contractPath, "utf-8");
+      const compileRes = await engine.compile({
+        "contracts/AgentVerifier.sol": content
+      });
+      expect(compileRes.status).toBe("success");
+      expect(compileRes.metadata.success).toBe(true);
+      expect(compileRes.metadata.abi).toBeDefined();
+    });
+
+    it("should calculate gas deduction and perform on-chain refund transfer", async () => {
+      const mockWalletSend = jest.fn().mockResolvedValue({
+        hash: "0xRefundTxHash",
+        wait: jest.fn().mockResolvedValue({ status: 1 })
+      });
+      const originalSend = ethers.Wallet.prototype.sendTransaction;
+      ethers.Wallet.prototype.sendTransaction = mockWalletSend;
+
+      try {
+        const provider = new ethers.JsonRpcProvider("http://localhost:8545");
+        jest.spyOn(provider, "getTransaction").mockResolvedValue({
+          from: "0xSenderAddress",
+          to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+          value: ethers.parseEther("1.0")
+        } as any);
+        jest.spyOn(provider, "getTransactionReceipt").mockResolvedValue({
+          status: 1,
+          logs: []
+        } as any);
+        jest.spyOn(provider, "getFeeData").mockResolvedValue({
+          gasPrice: ethers.parseUnits("50", "gwei")
+        } as any);
+
+        const refundAdapter = new EthersPaymentAdapter(provider);
+        const chargeId = await refundAdapter.createCharge("run_audit", "1.0", "MON");
+        const verified = await refundAdapter.verifyPayment(chargeId, "0xRealTransactionHashForRefund");
+        expect(verified).toBe(true);
+        await refundAdapter.cancelCharge(chargeId);
+
+        expect(mockWalletSend).toHaveBeenCalled();
+        const callArgs = mockWalletSend.mock.calls[0][0];
+        expect(callArgs.to).toBe("0xSenderAddress");
+        const expectedRefund = ethers.parseEther("1.0") - (ethers.parseUnits("50", "gwei") * 21000n);
+        expect(callArgs.value).toBe(expectedRefund);
+      } finally {
+        ethers.Wallet.prototype.sendTransaction = originalSend;
+      }
+    });
+
+    it("should refresh peer cache from on-chain Registry contract fallback if TTL has expired", async () => {
+      process.env.AGENT_REGISTRY_ADDRESS = "0xRegistryAddress0000000000000000000000000";
+      AgentRouter.clearRegistry();
+
+      const expiredTimestamp = Date.now() - 3700000;
+      const mockPeerManifest = {
+        agentId: "ttl-expired-agent",
+        name: "Expired Node",
+        registeredAt: expiredTimestamp,
+        pricing: { "search_docs": { price: "0.0", token: "MON" } }
+      };
+      AgentRouter.registerAgent("ttl-expired-agent", mockPeerManifest);
+
+      const getAgentSpy = jest.fn().mockResolvedValue([
+        "Refreshed On-Chain Agent",
+        "",
+        JSON.stringify({
+          pricing: { "search_docs": { price: "0.0", token: "MON" } }
+        })
+      ]);
+
+      const connectSpy = jest
+        .spyOn(ethers, "Contract")
+        .mockImplementation(() => {
+          return {
+            getAgent: getAgentSpy,
+          } as any;
+        });
+
+      const res = await AgentRouter.invokeAgent("ttl-expired-agent", "search_docs", { query: "test" });
+      expect(res.status).toBe("success");
+      expect(getAgentSpy).toHaveBeenCalledWith("ttl-expired-agent");
+
+      const registeredAfter = AgentRouter.getRegisteredAgents();
+      expect(registeredAfter["ttl-expired-agent"].name).toBe("Refreshed On-Chain Agent");
+      expect(registeredAfter["ttl-expired-agent"].registeredAt).toBeGreaterThan(Date.now() - 5000);
+
+      connectSpy.mockRestore();
+      delete process.env.AGENT_REGISTRY_ADDRESS;
+    });
+
+    afterAll(() => {
+      delete process.env.PAYMENT_RECEIVER_ADDRESS;
+      delete process.env.DEPLOYER_PRIVATE_KEY;
+      require("@monadforge/sdk").resetConfigForTesting();
     });
   });
 });

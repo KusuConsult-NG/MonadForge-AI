@@ -170,7 +170,9 @@ program
       if (result.status === "success") {
         console.log("Compilation successful.");
       } else {
-        throw new Error(`Compilation failed: ${result.metadata.errors?.join(", ")}`);
+        throw new Error(
+          `Compilation failed: ${result.metadata.errors?.join(", ")}`,
+        );
       }
     } catch (err: any) {
       logger.error("Build command failed", err);
@@ -377,7 +379,9 @@ program
       const actionLayer = new ActionLayer();
       const compResult = await actionLayer.compile(contracts);
       if (compResult.status === "failure") {
-        throw new Error(`Compilation failed: ${compResult.metadata.errors?.join(", ")}`);
+        throw new Error(
+          `Compilation failed: ${compResult.metadata.errors?.join(", ")}`,
+        );
       }
 
       console.log(`Deploying compiled contract to ${network}...`);
@@ -414,11 +418,17 @@ program
       } catch (e) {}
 
       console.log("\n--- DEPLOYMENT SUCCESSFUL ---");
-      console.log(`Contract Address: ${deployResult.metadata?.contractAddress}`);
-      console.log(`Transaction Hash: ${deployResult.metadata?.transactionHash}`);
+      console.log(
+        `Contract Address: ${deployResult.metadata?.contractAddress}`,
+      );
+      console.log(
+        `Transaction Hash: ${deployResult.metadata?.transactionHash}`,
+      );
       console.log(`Gas Used: ${deployResult.metadata?.gasUsed}`);
       if (deployResult.metadata?.verificationStatus) {
-        console.log(`Verification: ${deployResult.metadata.verificationMessage}`);
+        console.log(
+          `Verification: ${deployResult.metadata.verificationMessage}`,
+        );
       }
       console.log("-----------------------------\n");
     } catch (err: any) {

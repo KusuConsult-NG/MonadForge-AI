@@ -21,7 +21,8 @@ jest.mock("@monadforge/sdk", () => {
         return null; // Will trigger TypeError in getPrivateKey() but won't crash isMockEnv() due to short-circuiting in test env
       }
       return {
-        DEPLOYER_PRIVATE_KEY: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        DEPLOYER_PRIVATE_KEY:
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
         MONAD_RPC_URL: "https://testnet-rpc.monad.xyz",
         LOG_LEVEL: "INFO",
         NODE_ENV: "test",
@@ -45,7 +46,9 @@ describe("MonadForge AI Wrapper exports tests", () => {
   });
 
   it("should parse and validate intent", async () => {
-    const intent = await monadforge.intent.parseIntent("create erc20 token named Forge");
+    const intent = await monadforge.intent.parseIntent(
+      "create erc20 token named Forge",
+    );
     expect(intent.type).toBe("generate");
     expect(intent.domain).toBe("erc20");
     const isValid = await monadforge.intent.validateIntent(intent);
@@ -62,7 +65,9 @@ describe("MonadForge AI Wrapper exports tests", () => {
   });
 
   it("should create and optimize plan", async () => {
-    const intent = await monadforge.intent.parseIntent("create erc20 token named Forge");
+    const intent = await monadforge.intent.parseIntent(
+      "create erc20 token named Forge",
+    );
     const plan = await monadforge.plan.createPlan(intent);
     expect(plan.steps).toBeDefined();
 
@@ -71,22 +76,35 @@ describe("MonadForge AI Wrapper exports tests", () => {
   });
 
   it("should execute runs via the engine", async () => {
-    const result = await monadforge.engine.run({ goal: "create token", context: {} });
+    const result = await monadforge.engine.run({
+      goal: "create token",
+      context: {},
+    });
     expect(result.success).toBeDefined();
 
-    const contResult = await monadforge.engine.continue({ projectId: "test-project", prompt: "add features" });
+    const contResult = await monadforge.engine.continue({
+      projectId: "test-project",
+      prompt: "add features",
+    });
     expect(contResult.success).toBeDefined();
   });
 
   it("should perform actions", async () => {
-    const deployRes = await monadforge.actions.deploy({
-      status: "success",
-      action: "compile",
-      metadata: { success: true, abi: [], bytecode: "0x" }
-    }, "local");
+    const deployRes = await monadforge.actions.deploy(
+      {
+        status: "success",
+        action: "compile",
+        metadata: { success: true, abi: [], bytecode: "0x" },
+      },
+      "local",
+    );
     expect(deployRes.metadata.contractAddress).toBeDefined();
 
-    const callRes = await monadforge.actions.call("0x123", "balanceOf(address)", ["0x456"]);
+    const callRes = await monadforge.actions.call(
+      "0x123",
+      "balanceOf(address)",
+      ["0x456"],
+    );
     expect(callRes.status).toBe("success");
     expect(callRes.metadata.success).toBe(true);
 
@@ -107,7 +125,9 @@ describe("MonadForge AI Wrapper exports tests", () => {
     });
     expect(flowObj.flowId).toBeDefined();
     expect(flowObj.amount).toBe("10.5");
-    expect(flowObj.recipient).toBe("0x1234567890123456789012345678901234567890");
+    expect(flowObj.recipient).toBe(
+      "0x1234567890123456789012345678901234567890",
+    );
     expect(flowObj.challenge).toContain("Flow Execution Required");
     expect(flowObj.description).toBe("API access flow");
 
@@ -126,8 +146,12 @@ describe("MonadForge AI Wrapper exports tests", () => {
       tokenAddress: "0xTokenAddress00000000000000000000000000001",
       description: "ERC-20 payment flow",
     });
-    expect(erc20Flow.paymentUrl).toContain("0xTokenAddress00000000000000000000000000001");
-    expect(erc20Flow.tokenAddress).toBe("0xTokenAddress00000000000000000000000000001");
+    expect(erc20Flow.paymentUrl).toContain(
+      "0xTokenAddress00000000000000000000000000001",
+    );
+    expect(erc20Flow.tokenAddress).toBe(
+      "0xTokenAddress00000000000000000000000000001",
+    );
 
     // Test executeFlow in mock/zero-key mode
     const originalEnv = process.env.NODE_ENV;
@@ -187,65 +211,82 @@ describe("MonadForge AI Wrapper exports tests", () => {
     expect(verifyBadRecipient).toBe(false);
   });
 
-
   it("should fall back safely if getConfig throws in actions", async () => {
     throwGetConfig = true;
-    const deployRes = await monadforge.actions.deploy({
-      status: "success",
-      action: "compile",
-      metadata: { success: true, abi: [], bytecode: "0x" }
-    }, "local");
+    const deployRes = await monadforge.actions.deploy(
+      {
+        status: "success",
+        action: "compile",
+        metadata: { success: true, abi: [], bytecode: "0x" },
+      },
+      "local",
+    );
     expect(deployRes.metadata.contractAddress).toBeDefined();
   });
 
   it("should deploy upgradeable contract in mock mode via actions", async () => {
-    const deployRes = await monadforge.actions.deployUpgradeable({
-      status: "success",
-      action: "compile",
-      metadata: { success: true, abi: [], bytecode: "0x6060" }
-    }, ["arg1"], "initialize");
+    const deployRes = await monadforge.actions.deployUpgradeable(
+      {
+        status: "success",
+        action: "compile",
+        metadata: { success: true, abi: [], bytecode: "0x6060" },
+      },
+      ["arg1"],
+      "initialize",
+    );
     expect(deployRes.status).toBe("success");
     expect(deployRes.metadata.proxyAddress).toBeDefined();
     expect(deployRes.metadata.implementationAddress).toBeDefined();
   });
 
   it("should support automatic verification in deploy and deployUpgradeable actions, and support explicit verification", async () => {
-    const deployRes = await monadforge.actions.deploy({
-      status: "success",
-      action: "compile",
-      metadata: {
-        success: true,
-        abi: [],
-        bytecode: "0x",
-        sources: {
-          "contracts/Token.sol": "pragma solidity ^0.8.20; contract Token {}"
-        }
-      }
-    }, "local");
+    const deployRes = await monadforge.actions.deploy(
+      {
+        status: "success",
+        action: "compile",
+        metadata: {
+          success: true,
+          abi: [],
+          bytecode: "0x",
+          sources: {
+            "contracts/Token.sol": "pragma solidity ^0.8.20; contract Token {}",
+          },
+        },
+      },
+      "local",
+    );
     expect(deployRes.metadata.contractAddress).toBeDefined();
     expect(deployRes.metadata.verificationStatus).toBe("success");
     expect(deployRes.metadata.verificationMessage).toContain("verified");
 
-    const upgradeRes = await monadforge.actions.deployUpgradeable({
-      status: "success",
-      action: "compile",
-      metadata: {
-        success: true,
-        abi: [],
-        bytecode: "0x6060",
-        sources: {
-          "contracts/Token.sol": "pragma solidity ^0.8.20; contract Token {}"
-        }
-      }
-    }, ["arg1"], "initialize");
+    const upgradeRes = await monadforge.actions.deployUpgradeable(
+      {
+        status: "success",
+        action: "compile",
+        metadata: {
+          success: true,
+          abi: [],
+          bytecode: "0x6060",
+          sources: {
+            "contracts/Token.sol": "pragma solidity ^0.8.20; contract Token {}",
+          },
+        },
+      },
+      ["arg1"],
+      "initialize",
+    );
     expect(upgradeRes.status).toBe("success");
-    expect(upgradeRes.metadata.implementationVerificationStatus).toBe("success");
-    expect(upgradeRes.metadata.implementationVerificationMessage).toContain("verified");
+    expect(upgradeRes.metadata.implementationVerificationStatus).toBe(
+      "success",
+    );
+    expect(upgradeRes.metadata.implementationVerificationMessage).toContain(
+      "verified",
+    );
 
     const verifyRes = await monadforge.actions.verify(
       "0x123",
       "pragma solidity ^0.8.20; contract Token {}",
-      { contractName: "Token" }
+      { contractName: "Token" },
     );
     expect(verifyRes.status).toBe("success");
     expect(verifyRes.metadata.success).toBe(true);
@@ -262,19 +303,23 @@ describe("MonadForge AI Wrapper exports tests", () => {
     const auditRes = await monadforge.tools.audit("contract Token {}");
     expect(auditRes.riskScore).toBeDefined();
 
-    const repairRes = await monadforge.tools.repair("contract Token {}", ["error"]);
+    const repairRes = await monadforge.tools.repair("contract Token {}", [
+      "error",
+    ]);
     expect(repairRes.success).toBeDefined();
 
     const composeRes = await monadforge.tools.compose("Build DEX");
     expect(composeRes.steps).toBeDefined();
 
-    const reviewRes = await monadforge.tools.review({ "Token.sol": "contract Token {}" });
+    const reviewRes = await monadforge.tools.review({
+      "Token.sol": "contract Token {}",
+    });
     expect(reviewRes).toBeDefined();
   });
 
   it("should perform agent operations", async () => {
     expect(monadforge.agent).toBeDefined();
-    
+
     const manifest = monadforge.agent.getManifest();
     expect(manifest.agentId).toBe("monadforge-ai");
 
@@ -287,16 +332,23 @@ describe("MonadForge AI Wrapper exports tests", () => {
     const reputation = monadforge.agent.getReputation();
     expect(reputation.score).toBeDefined();
 
-    monadforge.agent.registerAgent("other-agent", { agentId: "other-agent", pricing: { "search_docs": { price: "0.0", token: "MON" } } });
-    
-    const invokeRes = await monadforge.agent.invokeAgent("other-agent", "search_docs", { query: "test" });
+    monadforge.agent.registerAgent("other-agent", {
+      agentId: "other-agent",
+      pricing: { search_docs: { price: "0.0", token: "MON" } },
+    });
+
+    const invokeRes = await monadforge.agent.invokeAgent(
+      "other-agent",
+      "search_docs",
+      { query: "test" },
+    );
     expect(invokeRes.status).toBe("success");
 
     monadforge.agent.recordExecution({
       agentId: "monadforge-ai",
       skillName: "search_docs",
       durationMs: 100,
-      status: "success"
+      status: "success",
     });
 
     const history = monadforge.agent.getExecutionHistory("monadforge-ai");

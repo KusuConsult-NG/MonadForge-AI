@@ -62,7 +62,7 @@ describe("DeploymentEngine Unit Tests", () => {
     const badCompile: any = {
       status: "failure",
       action: "compile",
-      metadata: { success: false, abi: [], bytecode: "" }
+      metadata: { success: false, abi: [], bytecode: "" },
     };
     await expect(engine.deployToTestnet(badCompile, "0x000")).rejects.toThrow(
       "Cannot deploy",
@@ -90,7 +90,10 @@ describe("DeploymentEngine Unit Tests", () => {
     const { resetConfigForTesting } = require("@monadforge/sdk");
     resetConfigForTesting();
 
-    const mockTx = { hash: "0xRealTxHash123", wait: jest.fn().mockResolvedValue({ gasUsed: BigInt(150000) }) };
+    const mockTx = {
+      hash: "0xRealTxHash123",
+      wait: jest.fn().mockResolvedValue({ gasUsed: BigInt(150000) }),
+    };
     const mockContract = {
       waitForDeployment: jest.fn().mockResolvedValue({}),
       getAddress: jest.fn().mockResolvedValue("0xRealContract123"),
@@ -118,7 +121,7 @@ describe("DeploymentEngine Unit Tests", () => {
     const compileResult: any = {
       status: "success",
       action: "compile",
-      metadata: { success: true, abi: [], bytecode: "0x6060" }
+      metadata: { success: true, abi: [], bytecode: "0x6060" },
     };
     const deployResult = await engine.deployToTestnet(
       compileResult,
@@ -173,7 +176,7 @@ describe("DeploymentEngine Unit Tests", () => {
     const compileResult: any = {
       status: "success",
       action: "compile",
-      metadata: { success: true, abi: [], bytecode: "0x6060" }
+      metadata: { success: true, abi: [], bytecode: "0x6060" },
     };
     const deployResult = await engine.deployToTestnet(
       compileResult,
@@ -233,7 +236,7 @@ describe("DeploymentEngine Unit Tests", () => {
     const compileResult: any = {
       status: "success",
       action: "compile",
-      metadata: { success: true, abi: [], bytecode: "0x6060" }
+      metadata: { success: true, abi: [], bytecode: "0x6060" },
     };
     const deployResult = await engine.deployToTestnet(
       compileResult,
@@ -261,7 +264,9 @@ describe("DeploymentEngine Unit Tests", () => {
       const res = await engine.compile({});
       expect(res.status).toBe("failure");
       expect(res.metadata.success).toBe(false);
-      expect(res.metadata.errors).toContain("No source files provided for compilation");
+      expect(res.metadata.errors).toContain(
+        "No source files provided for compilation",
+      );
     });
 
     it("should fail compilation for invalid mock contract structure in mock mode", async () => {
@@ -311,7 +316,9 @@ describe("DeploymentEngine Unit Tests", () => {
       const res = await engine.compile(files);
       expect(res.status).toBe("failure");
       expect(res.metadata.success).toBe(false);
-      expect(res.metadata.errors).toContain("No contract compiled found in outputs");
+      expect(res.metadata.errors).toContain(
+        "No contract compiled found in outputs",
+      );
 
       solcSpy.mockRestore();
     });
@@ -450,7 +457,9 @@ describe("DeploymentEngine Unit Tests", () => {
       });
       expect(res.status).toBe("failure");
       expect(res.metadata.success).toBe(false);
-      expect(res.metadata.errors).toEqual(["Compilation failed custom message"]);
+      expect(res.metadata.errors).toEqual([
+        "Compilation failed custom message",
+      ]);
       solcSpy.mockRestore();
     });
 
@@ -657,7 +666,7 @@ describe("DeploymentEngine Unit Tests", () => {
       const compileResult: any = {
         status: "success",
         action: "compile",
-        metadata: { success: true, abi: [], bytecode: "0x6060" }
+        metadata: { success: true, abi: [], bytecode: "0x6060" },
       };
       const deployResult = await engine.deployToTestnet(
         compileResult,
@@ -738,7 +747,9 @@ describe("DeploymentEngine Unit Tests", () => {
       const res = await engine.verifyDeployment("0x123", "pragma solidity");
       expect(res.status).toBe("failure");
       expect(res.metadata.success).toBe(false);
-      expect(res.metadata.message).toContain("Verification failed: Compilation error");
+      expect(res.metadata.message).toContain(
+        "Verification failed: Compilation error",
+      );
 
       globalFetchSpy.mockRestore();
       process.env.NODE_ENV = originalEnv;
@@ -795,7 +806,7 @@ describe("DeploymentEngine Unit Tests", () => {
       const compileResult: any = {
         status: "success",
         action: "compile",
-        metadata: { success: true, abi: [], bytecode: "0x6060" }
+        metadata: { success: true, abi: [], bytecode: "0x6060" },
       };
       const res = await actionLayer.deployContract(compileResult, mockKey);
       expect(res.status).toBe("success");
@@ -824,19 +835,27 @@ describe("DeploymentEngine Unit Tests", () => {
 
       const resMint = await actionLayer.mint("0x123", "0xabc", "100", mockKey);
       expect(resMint.status).toBe("success");
-      expect(resMint.txHash || resMint.metadata.transactionHash).toContain("Mint");
+      expect(resMint.txHash || resMint.metadata.transactionHash).toContain(
+        "Mint",
+      );
 
       const resStake = await actionLayer.stake("0x123", "100", mockKey);
       expect(resStake.status).toBe("success");
-      expect(resStake.txHash || resStake.metadata.transactionHash).toContain("Stake");
+      expect(resStake.txHash || resStake.metadata.transactionHash).toContain(
+        "Stake",
+      );
 
       const resSwap = await actionLayer.swap("0x123", "0xabc", "100", mockKey);
       expect(resSwap.status).toBe("success");
-      expect(resSwap.txHash || resSwap.metadata.transactionHash).toContain("Swap");
+      expect(resSwap.txHash || resSwap.metadata.transactionHash).toContain(
+        "Swap",
+      );
 
       const resTransfer = await actionLayer.transfer("0xabc", "100", mockKey);
       expect(resTransfer.status).toBe("success");
-      expect(resTransfer.txHash || resTransfer.metadata.transactionHash).toContain("Transfer");
+      expect(
+        resTransfer.txHash || resTransfer.metadata.transactionHash,
+      ).toContain("Transfer");
 
       const resTransferToken = await actionLayer.transfer(
         "0xabc",
@@ -845,7 +864,9 @@ describe("DeploymentEngine Unit Tests", () => {
         "0x456",
       );
       expect(resTransferToken.status).toBe("success");
-      expect(resTransferToken.txHash || resTransferToken.metadata.transactionHash).toContain("Transfer");
+      expect(
+        resTransferToken.txHash || resTransferToken.metadata.transactionHash,
+      ).toContain("Transfer");
     });
 
     it("should test callContract non-mock pure/view functions", async () => {
@@ -982,15 +1003,17 @@ describe("DeploymentEngine Unit Tests", () => {
       const { MonadJsonRpcProvider } = require("../src/index");
       const provider = new MonadJsonRpcProvider("http://localhost:8545");
 
-      const sendSpy = jest.spyOn(provider, "send").mockImplementation(async (method: any) => {
-        if (method === "eth_feeHistory") {
-          return {
-            baseFeePerGas: ["100000000", "120000000"],
-            reward: [["500000000"], ["400000000"]],
-          };
-        }
-        throw new Error("unsupported");
-      });
+      const sendSpy = jest
+        .spyOn(provider, "send")
+        .mockImplementation(async (method: any) => {
+          if (method === "eth_feeHistory") {
+            return {
+              baseFeePerGas: ["100000000", "120000000"],
+              reward: [["500000000"], ["400000000"]],
+            };
+          }
+          throw new Error("unsupported");
+        });
 
       const feeData = await provider.getFeeData();
       expect(feeData.maxFeePerGas).toBeDefined();
@@ -1003,12 +1026,14 @@ describe("DeploymentEngine Unit Tests", () => {
       const { MonadJsonRpcProvider } = require("../src/index");
       const provider = new MonadJsonRpcProvider("http://localhost:8545");
 
-      const sendSpy = jest.spyOn(provider, "send").mockImplementation(async (method: any) => {
-        if (method === "eth_gasPrice") {
-          return "0x2540be400";
-        }
-        throw new Error("unsupported");
-      });
+      const sendSpy = jest
+        .spyOn(provider, "send")
+        .mockImplementation(async (method: any) => {
+          if (method === "eth_gasPrice") {
+            return "0x2540be400";
+          }
+          throw new Error("unsupported");
+        });
 
       const feeData = await provider.getFeeData();
       expect(feeData.maxFeePerGas?.toString()).toBe("10000000000");
@@ -1021,7 +1046,9 @@ describe("DeploymentEngine Unit Tests", () => {
       const { MonadJsonRpcProvider } = require("../src/index");
       const provider = new MonadJsonRpcProvider("http://localhost:8545");
 
-      const sendSpy = jest.spyOn(provider, "send").mockRejectedValue(new Error("RPC Error"));
+      const sendSpy = jest
+        .spyOn(provider, "send")
+        .mockRejectedValue(new Error("RPC Error"));
 
       const feeData = await provider.getFeeData();
       expect(feeData.maxFeePerGas?.toString()).toBe("100000000");

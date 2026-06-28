@@ -55,13 +55,19 @@ export class KnowledgeEngine implements IKnowledgeEngine {
       let matches = await this.qdrant.search(COLLECTION_NAME, queryVector, 5);
 
       // Auto-seed from local knowledge-base folder on-the-fly if mock database is empty
-      if ((!matches || matches.length === 0) && (this.qdrant as any).isMock && process.env.NODE_ENV !== "test") {
+      if (
+        (!matches || matches.length === 0) &&
+        (this.qdrant as any).isMock &&
+        process.env.NODE_ENV !== "test"
+      ) {
         try {
           const fs = require("fs");
           const path = require("path");
           const kbDir = path.resolve(__dirname, "../../docs/knowledge-base");
           if (fs.existsSync(kbDir)) {
-            const files = fs.readdirSync(kbDir).filter((file: string) => file.endsWith(".md"));
+            const files = fs
+              .readdirSync(kbDir)
+              .filter((file: string) => file.endsWith(".md"));
             const docs: DocSource[] = [];
             for (const file of files) {
               const filePath = path.join(kbDir, file);
@@ -76,11 +82,18 @@ export class KnowledgeEngine implements IKnowledgeEngine {
             }
             if (docs.length > 0) {
               await this.ingestDocs(docs);
-              matches = await this.qdrant.search(COLLECTION_NAME, queryVector, 5);
+              matches = await this.qdrant.search(
+                COLLECTION_NAME,
+                queryVector,
+                5,
+              );
             }
           }
         } catch (seedErr) {
-          logger.warn("Offline auto-seeding failed, continuing with empty search results", seedErr);
+          logger.warn(
+            "Offline auto-seeding failed, continuing with empty search results",
+            seedErr,
+          );
         }
       }
 

@@ -202,15 +202,21 @@ describe("RepairEngine Unit Tests", () => {
       }
     `;
 
-    const res = await engine.repairContracts(badCode, [
-      "MONAD-001",
-    ]);
+    const res = await engine.repairContracts(badCode, ["MONAD-001"]);
     expect(res.success).toBe(true);
-    expect(res.fixedCode).toContain("mapping(address => uint256) public countPartition;");
+    expect(res.fixedCode).toContain(
+      "mapping(address => uint256) public countPartition;",
+    );
     expect(res.fixedCode).toContain("countPartition[msg.sender]++;");
-    expect(res.fixedCode).toContain("mapping(address => uint256) public totalCoinsPartition;");
-    expect(res.fixedCode).toContain("totalCoinsPartition[msg.sender] += amount;");
-    expect(res.fixedCode).toContain("totalCoinsPartition[msg.sender] = amount;");
+    expect(res.fixedCode).toContain(
+      "mapping(address => uint256) public totalCoinsPartition;",
+    );
+    expect(res.fixedCode).toContain(
+      "totalCoinsPartition[msg.sender] += amount;",
+    );
+    expect(res.fixedCode).toContain(
+      "totalCoinsPartition[msg.sender] = amount;",
+    );
   });
 
   it("should repair MONAD-001 with uint128 type and fix emit/return references", async () => {
@@ -229,7 +235,9 @@ describe("RepairEngine Unit Tests", () => {
     `;
     const res = await engine.repairContracts(badCode, ["MONAD-001"]);
     expect(res.success).toBe(true);
-    expect(res.fixedCode).toContain("mapping(address => uint128) public scorePartition;");
+    expect(res.fixedCode).toContain(
+      "mapping(address => uint128) public scorePartition;",
+    );
     expect(res.fixedCode).toContain("scorePartition[msg.sender]++");
   });
 
@@ -260,7 +268,10 @@ describe("RepairEngine Unit Tests", () => {
     const res = await engine.repairContracts(code, ["ECON-002"]);
     expect(res.success).toBe(true);
     // The guard or trustedPool should be injected
-    expect(res.fixedCode.includes("trustedPool") || res.fixedCode.includes("Unauthorized")).toBe(true);
+    expect(
+      res.fixedCode.includes("trustedPool") ||
+        res.fixedCode.includes("Unauthorized"),
+    ).toBe(true);
   });
 
   it("should repair UPGRADE-001 unsafe constructor in upgradeable contract", async () => {
@@ -338,4 +349,3 @@ describe("RepairEngine Unit Tests", () => {
     expect(res.success).toBe(false);
   });
 });
-

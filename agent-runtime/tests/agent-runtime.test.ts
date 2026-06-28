@@ -225,7 +225,9 @@ describe("AgentRuntimeEngine Unit Tests", () => {
   });
 
   it("should fall back to default project if no project ID is in the prompt", async () => {
-    const result = await runtime.executeGoal("Build a staking protocol on Monad");
+    const result = await runtime.executeGoal(
+      "Build a staking protocol on Monad",
+    );
     expect(result.success).toBe(true);
 
     // Clean up default-project
@@ -247,7 +249,12 @@ describe("AgentRuntimeEngine Unit Tests", () => {
         projectId: "agent-project",
         goal: "Build DEX",
         steps: [
-          { id: "step-deploy-1", skill: "deploy_contract", dependencies: [], params: {} }
+          {
+            id: "step-deploy-1",
+            skill: "deploy_contract",
+            dependencies: [],
+            params: {},
+          },
         ],
       } as any);
     const workflowSpy = jest
@@ -263,7 +270,9 @@ describe("AgentRuntimeEngine Unit Tests", () => {
         },
       });
 
-    const result = await runtime.executeGoal("Build a DEX protocol on Monad for project agent-project");
+    const result = await runtime.executeGoal(
+      "Build a DEX protocol on Monad for project agent-project",
+    );
     expect(result.success).toBe(true);
     expect(result.deployments.length).toBe(1);
     expect(result.deployments[0].transactionHash).toBe("0x");
