@@ -173,11 +173,11 @@ describe("MemoryEngine Unit Tests", () => {
     const fsLib = require("fs");
     const existSpy = jest.spyOn(fsLib, "existsSync").mockReturnValue(false);
     const mkdirSpy = jest
-      .spyOn(fsLib, "mkdirSync")
-      .mockImplementation(() => undefined as any);
+      .spyOn(fsLib.promises, "mkdir")
+      .mockImplementation(() => Promise.resolve(undefined));
     const writeSpy = jest
-      .spyOn(fsLib, "writeFileSync")
-      .mockImplementation(() => undefined as any);
+      .spyOn(fsLib.promises, "writeFile")
+      .mockImplementation(() => Promise.resolve());
 
     const mockContext: ProjectContext = {
       projectId: "temp-project",

@@ -49,13 +49,13 @@ export class MemoryEngine {
       operation: "loadProjectContext",
     });
     const filePath = this.getStoragePath(projectId);
-    if (!fs.existsSync(filePath)) {
-      return null;
-    }
     try {
-      const data = fs.readFileSync(filePath, "utf8");
+      const data = await fs.promises.readFile(filePath, "utf8");
       return JSON.parse(data) as ProjectContext;
     } catch (e: any) {
+      if (e.code === "ENOENT") {
+        return null;
+      }
       logger.error(`Failed to parse project context: ${e.message}`);
       return null;
     }
@@ -71,10 +71,8 @@ export class MemoryEngine {
     MemorySchema.parse(context);
     const filePath = this.getStoragePath(projectId);
     const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(filePath, JSON.stringify(context, null, 2), "utf8");
+    await fs.promises.mkdir(dir, { recursive: true });
+    await fs.promises.writeFile(filePath, JSON.stringify(context, null, 2), "utf8");
   }
 
   public async saveExecutionTrace(
@@ -87,14 +85,12 @@ export class MemoryEngine {
     ExecutionTraceSchema.parse(trace);
 
     const traceDir = path.resolve(process.cwd(), ".monadforge", "traces");
-    if (!fs.existsSync(traceDir)) {
-      fs.mkdirSync(traceDir, { recursive: true });
-    }
+    await fs.promises.mkdir(traceDir, { recursive: true });
     const tracePath = path.join(
       traceDir,
       `trace_${trace.timestamp.replace(/[:.]/g, "-")}_${projectId}.json`,
     );
-    fs.writeFileSync(tracePath, JSON.stringify(trace, null, 2), "utf8");
+    await fs.promises.writeFile(tracePath, JSON.stringify(trace, null, 2), "utf8");
     logger.info(`Execution trace written to ${tracePath}`);
   }
 
