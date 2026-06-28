@@ -39,9 +39,16 @@ export class NodeServer {
   }
 
   public start(port: number = 3010): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (this.server) {
         return resolve();
+      }
+
+      try {
+        const { NodeRouter } = require("./routing");
+        await NodeRouter.ensureRegistryLoaded();
+      } catch (err) {
+        logger.error("Failed to preload peer registry during server start", err);
       }
 
       this.server = http.createServer(async (req, res) => {

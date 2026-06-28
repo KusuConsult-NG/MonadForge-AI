@@ -929,16 +929,24 @@ export class ActionLayer {
         },
       };
     }
+      let gasLimit: bigint | undefined;
+      try {
+        const est = await contract[functionName].estimateGas(...args);
+        gasLimit = (est * 125n) / 100n;
+      } catch {
+        gasLimit = 500000n;
+      }
+
       const tx = await TransactionQueue.enqueue(privateKey, async () => {
         let sentTx;
         try {
-          sentTx = await contract[functionName](...args);
+          sentTx = await contract[functionName](...args, { gasLimit });
         } catch (err: any) {
           const errStr = String(err).toLowerCase();
           if (errStr.includes("nonce") || errStr.includes("underpriced")) {
             logger.warn("Nonce collision detected during write execution. Resetting nonce and retrying once...");
             wallet.reset();
-            sentTx = await contract[functionName](...args);
+            sentTx = await contract[functionName](...args, { gasLimit });
           } else {
             throw err;
           }
@@ -1241,12 +1249,21 @@ export class ActionLayer {
         },
       };
     }
+      let gasLimit: bigint | undefined;
+      try {
+        const est = await wallet.estimateGas({ to, value: amount });
+        gasLimit = (est * 125n) / 100n;
+      } catch {
+        gasLimit = 100000n;
+      }
+
       const tx = await TransactionQueue.enqueue(privateKey, async () => {
         let sentTx;
         try {
           sentTx = await wallet.sendTransaction({
             to,
             value: amount,
+            gasLimit,
           });
         } catch (err: any) {
           const errStr = String(err).toLowerCase();
@@ -1256,6 +1273,7 @@ export class ActionLayer {
             sentTx = await wallet.sendTransaction({
               to,
               value: amount,
+              gasLimit,
             });
           } else {
             throw err;

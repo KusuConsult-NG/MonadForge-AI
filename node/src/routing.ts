@@ -39,7 +39,29 @@ export class NodeRouter {
     return path.resolve(process.cwd(), ".monadforge", "peers.json");
   }
 
-  private static ensureRegistryLoaded(): void {
+  public static async ensureRegistryLoaded(): Promise<void> {
+    if (this.registryLoaded) {
+      return;
+    }
+    this.registryLoaded = true;
+    try {
+      const filePath = this.getPeersFilePath();
+      if (fs.existsSync(filePath)) {
+        const content = await fs.promises.readFile(filePath, "utf-8");
+        const data = JSON.parse(content);
+        for (const [agentId, manifest] of Object.entries(data)) {
+          this.localRegistry.set(agentId, manifest);
+        }
+        logger.info(
+          `Loaded ${Object.keys(data).length} peer node manifests from persistent storage.`,
+        );
+      }
+    } catch (err: any) {
+      logger.error("Failed to load peer nodes from persistent file", err);
+    }
+  }
+
+  public static ensureRegistryLoadedSync(): void {
     if (this.registryLoaded) {
       return;
     }
@@ -79,7 +101,7 @@ export class NodeRouter {
   }
 
   public static registerAgent(agentId: string, manifest: any): void {
-    this.ensureRegistryLoaded();
+    this.ensureRegistryLoadedSync();
     manifest.registeredAt = manifest.registeredAt || Date.now();
     this.localRegistry.set(agentId, manifest);
     logger.info(`Registered node '${agentId}' in router database.`);
@@ -93,7 +115,7 @@ export class NodeRouter {
     paymentDetails?: PaymentDetails,
     context?: any,
   ): Promise<any> {
-    this.ensureRegistryLoaded();
+    await this.ensureRegistryLoaded();
     logger.info(
       `Routing request to node '${targetAgentId}' for skill '${skillName}'`,
     );
@@ -300,7 +322,7 @@ export class NodeRouter {
   }
 
   public static getRegisteredAgents(): Record<string, any> {
-    this.ensureRegistryLoaded();
+    this.ensureRegistryLoadedSync();
     const nodes: Record<string, any> = {
       "monadforge-node": NodeIdentity.getManifest(),
     };
