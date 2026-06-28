@@ -506,5 +506,27 @@ describe("Agent Package Unit Tests", () => {
       await adapter.settleExecution(chargeId);
       expect(adapter.getChargeStatus(chargeId)).toBe("settled");
     });
+
+    it("should instantiate and verify using default provider", async () => {
+      const defaultAdapter = new EthersPaymentAdapter();
+      const chargeId = await defaultAdapter.createCharge("run_audit", "1.0", "MON");
+
+      const connectSpy = jest
+        .spyOn(ethers, "JsonRpcProvider")
+        .mockImplementation(() => {
+          return {
+            getTransaction: jest.fn().mockResolvedValue({
+              to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+              value: ethers.parseEther("1.0"),
+            }),
+            getTransactionReceipt: jest.fn().mockResolvedValue({ status: 1 }),
+          } as any;
+        });
+
+      const result = await defaultAdapter.verifyPayment(chargeId, "0x123");
+      expect(result).toBe(true);
+
+      connectSpy.mockRestore();
+    });
   });
 });

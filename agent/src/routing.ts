@@ -1,6 +1,8 @@
-import { createLogger } from "@monadforge/sdk";
+import { createLogger, getConfig } from "@monadforge/sdk";
 import { MonetizedExecutor, PaymentDetails } from "./monetization";
 import { AgentIdentity } from "./manifest";
+import { ethers } from "ethers";
+
 
 const logger = createLogger("Routing");
 
@@ -35,6 +37,57 @@ export class AgentRouter {
     if (remoteAgent.pricing?.[skillName] && parseFloat(remoteAgent.pricing[skillName].price) > 0) {
       if (!paymentDetails) {
         throw new Error(`Agent '${targetAgentId}' requires payment for skill '${skillName}'.`);
+      }
+    }
+
+    if (remoteAgent.endpointUrl) {
+      logger.info(`Sending real network request to agent '${targetAgentId}' at ${remoteAgent.endpointUrl}`);
+      const payloadObj = {
+        skillName,
+        params,
+        paymentDetails,
+        timestamp: Date.now().toString()
+      };
+      const payloadStr = JSON.stringify(payloadObj);
+
+      const config = getConfig();
+      let privateKey = config.DEPLOYER_PRIVATE_KEY;
+      if (!privateKey || privateKey === "0x0000000000000000000000000000000000000000000000000000000000000000") {
+        privateKey = "0x0123456789012345678901234567890123456789012345678901234567890123";
+      }
+      const wallet = new ethers.Wallet(privateKey);
+      const senderAddress = wallet.address;
+      const signature = await wallet.signMessage(payloadStr);
+
+      let url = remoteAgent.endpointUrl;
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = `http://${url}`;
+      }
+      if (!url.endsWith("/invoke")) {
+        url = `${url.replace(/\/$/, "")}/invoke`;
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Agent-Signature": signature,
+            "X-Agent-Sender": senderAddress
+          },
+          body: payloadStr
+        });
+
+        if (!response.ok) {
+          const errBody = await response.json().catch(() => ({}));
+          throw new Error(`HTTP error ${response.status}: ${errBody.error || response.statusText}`);
+        }
+
+        const resJson = await response.json();
+        return resJson.result;
+      } catch (err: any) {
+        logger.error(`Failed to invoke remote agent at ${url}`, err);
+        throw err;
       }
     }
 
