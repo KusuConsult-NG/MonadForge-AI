@@ -7,7 +7,7 @@ import { RepairEngine } from "@monadforge/repair";
 import { SkillCompositionEngine } from "@monadforge/composition";
 import { ArchitectureReviewEngine } from "@monadforge/review";
 import { getConfig } from "@monadforge/sdk";
-import { AgentIdentity, AgentRouter, AgentMarketplace, MonetizedExecutor, MockPaymentAdapter } from "@monadforge/agent";
+import { AgentIdentity, AgentRouter, AgentMarketplace, MonetizedExecutor, MockPaymentAdapter, EthersPaymentAdapter } from "@monadforge/agent";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -281,7 +281,8 @@ export const monadforge = {
     getExecutionHistory: (filterAgentId?: string) => AgentMarketplace.getExecutionHistory(filterAgentId),
     recordExecution: (record: any) => AgentMarketplace.recordExecution(record),
     createExecutor: (paymentAdapter?: any) => new MonetizedExecutor(paymentAdapter),
-    createMockPaymentAdapter: () => new MockPaymentAdapter()
+    createMockPaymentAdapter: () => new MockPaymentAdapter(),
+    createEthersPaymentAdapter: (provider?: any) => new EthersPaymentAdapter(provider)
   },
 };
 export default monadforge;

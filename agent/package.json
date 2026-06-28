@@ -11,7 +11,8 @@
   "dependencies": {
     "@monadforge/sdk": "*",
     "@monadforge/skills": "*",
-    "@monadforge/agent-runtime": "*"
+    "@monadforge/agent-runtime": "*",
+    "ethers": "^6.11.1"
   },
   "devDependencies": {
     "typescript": "^5.3.3"
