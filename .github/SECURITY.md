@@ -1,7 +1,7 @@
 # Security Policy
 
 ## Supported Versions
-We actively support security updates for the following versions of MonadForge AI:
+We actively support security updates for the following versions of MonadForge:
 
 | Version | Supported |
 | --- | --- |

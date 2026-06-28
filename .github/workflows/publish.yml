@@ -1,4 +1,4 @@
-name: MonadForge AI Publishing Pipeline
+name: MonadForge Publishing Pipeline
 
 on:
   push:

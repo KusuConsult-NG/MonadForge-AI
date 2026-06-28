@@ -62,7 +62,7 @@
         },
         "tests": {},
         "deploymentScripts": {},
-        "readme": "# Simple Staking Contract\nGenerated via MonadForge AI.",
+        "readme": "# Simple Staking Contract\nGenerated via MonadForge.",
         "envExample": ""
       },
       "durationMs": 100,

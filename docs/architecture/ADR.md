@@ -1,19 +1,19 @@
-# MONADFORGE AI - ARCHITECTURE DECISION RECORDS (ADR)
+# MONADFORGE - ARCHITECTURE DECISION RECORDS (ADR)
 
 ## VERSION 1.0
 
 ### PURPOSE
 
-This document defines the permanent architectural decisions governing MonadForge AI.
+This document defines the permanent architectural decisions governing MonadForge.
 
-No AI coding system, contributor, contractor, engineer, or automation tool may override these decisions without creating a new ADR.
+No Automated coding system, contributor, contractor, engineer, or automation tool may override these decisions without creating a new ADR.
 
 These ADRs exist to prevent architectural drift.
 
 ---
 
 # ADR-001: Architecture Style
-* **Decision:** MonadForge AI shall use a Flat Monorepo design structure.
+* **Decision:** MonadForge shall use a Flat Monorepo design structure.
 * **Reason:** Allows separate NPM publishing of individual packages while keeping imports local and simple.
 * **Benefits:** Modular testing, zero deployment overhead for local dev tools.
 * **Status:** Approved
@@ -28,7 +28,7 @@ These ADRs exist to prevent architectural drift.
 * **Reason:** Native integration with developer tools and robust support across macOS, Linux, and Windows.
 * **Status:** Approved
 
-# ADR-004: AI Provider Strategy
+# ADR-004: Automated Provider Strategy
 * **Decision:** Provider Abstraction Layer (e.g. Gemini, OpenAI, Anthropic).
 * **Forbidden:** Direct provider coupling or baking prompts into backend API calls.
 * **Status:** Approved
@@ -82,14 +82,14 @@ These ADRs exist to prevent architectural drift.
 * **Status:** Approved
 
 # ADR-017: MCP Architecture
-* **Decision:** Expose MonadForge AI engines via a Model Context Protocol (MCP) server over standard input/output (stdio).
+* **Decision:** Expose MonadForge engines via a Model Context Protocol (MCP) server over standard input/output (stdio).
 * **Status:** Approved
 
 # ADR-018: CLI Design
 * **Decision:** Commander-based CLI (`monadforge`).
 * **Status:** Approved
 
-# ADR-019: AI Agent Governance
+# ADR-019: Automated Node Governance
 * **Decision:** Local operations require developer confirmation (e.g. manual approval prompt for testnet deployments).
 * **Status:** Approved
 

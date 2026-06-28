@@ -1,6 +1,6 @@
-# MonadForge AI Roadmap
+# MonadForge Roadmap
 
-This roadmap outlines the planned development phases for MonadForge AI as ecosystem-grade AI developer infrastructure.
+This roadmap outlines the planned development phases for MonadForge as ecosystem-grade Automated developer infrastructure.
 
 ---
 
@@ -10,13 +10,13 @@ This roadmap outlines the planned development phases for MonadForge AI as ecosys
 - [x] Expose stdio-compatible MCP Server.
 
 ## Phase 2: Package Distribution and Tool Standard (Q4 2026) - *Active*
-- [x] Publish unified `@monadforge/ai` package.
-- [x] Standardize schemas with the Monad Agent Standard (MAS).
+- [x] Publish unified `@monadforge/automated` package.
+- [x] Standardize schemas with the Monad Node Standard (MNS).
 - [x] Add 6 primary contract templates and working example folders.
 
 ## Phase 3: Developer Ecosystem Growth (Q1 2027)
 - [ ] Implement support for advanced upgradeability patterns (UUPS/Transparent proxies).
-- [ ] Connect with hosted/remote agent executors (e.g. LangChain, AutoGPT).
+- [ ] Connect with hosted/remote node executors (e.g. LangChain, AutoGPT).
 - [ ] Add support for custom plugins in Cursor/Windsurf.
 
 ## Phase 4: Mainnet Launch Optimization (Q2 2027)

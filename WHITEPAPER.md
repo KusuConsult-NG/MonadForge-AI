@@ -1,7 +1,7 @@
-# MonadForge AI: Agent-Native, Local-First Execution Infrastructure for the Monad Blockchain
+# MonadForge: Node-Native, Local-First Execution Infrastructure for the Monad Blockchain
 
 **Version:** 1.0.0 (Release-Ready)  
-**Author:** MonadForge AI Core Engineering Group  
+**Author:** MonadForge Core Engineering Group  
 **License:** Apache-2.0  
 **Status:** Technical Specification & Architectural Whitepaper  
 
@@ -14,14 +14,14 @@ Since the inception of the Ethereum Virtual Machine (EVM), smart contract develo
 
 However, all these tools share a fundamental architectural assumption: **a human developer is in the loop**. When a compilation fails, Hardhat outputs a stack trace to a terminal, expecting a human to read it, locate the syntax error, edit the file, and re-run the command. When a security vulnerability is identified by static analysis tools (like Slither or Mythril), a human must interpret the report and modify the code layout.
 
-### 1.2. The Rise of Agentic Software Engineers
-With the advent of advanced Large Language Models (LLMs) and agentic developer frameworks—such as Claude Code, Cursor, Windsurf, OpenCode, and custom MCP-driven agents—the developer persona is shifting from human-only to agent-primary. AI developer agents execute tasks by running shell commands, reading files, and writing code in loops.
+### 1.2. The Rise of Automated Software Engineers
+With the advent of advanced Automated Tools (Clients) and automated developer frameworks—such as Claude Code, Cursor, Windsurf, OpenCode, and custom MCP-driven nodes—the developer persona is shifting from human-only to node-primary. Automated developer nodes execute tasks by running shell commands, reading files, and writing code in loops.
 
-When an AI agent is forced to use human-centric toolkits, several friction points arise:
-- **Terminal Parsing Overhead**: Agents must parse noisy, unstructured ANSI-colored terminal logs to extract compilation errors, transaction hashes, or test failures.
-- **Lack of Local Memory**: AI agents are stateless across command invocations. A Cursor agent running `npx hardhat deploy` has no easy way of knowing where previous contracts were deployed unless it parses raw JSON or text logs generated on a previous turn.
-- **Open-Loop Failures**: If a deployment fails due to a network timeout, insufficient faucet balance, or a minor syntax mistake (like a missing semicolon), the agent must go through another full prompting round, increasing time-to-resolution, cost, and token consumption.
-- **High Latency**: Relying on external LLMs to classify basic developer intents (like "compile my project") introduces significant latency and API costs.
+When an Automated node is forced to use human-centric toolkits, several friction points arise:
+- **Terminal Parsing Overhead**: Nodes must parse noisy, unstructured ANSI-colored terminal logs to extract compilation errors, transaction hashes, or test failures.
+- **Lack of Local Memory**: Automated nodes are stateless across command invocations. A Cursor node running `npx hardhat deploy` has no easy way of knowing where previous contracts were deployed unless it parses raw JSON or text logs generated on a previous turn.
+- **Open-Loop Failures**: If a deployment fails due to a network timeout, insufficient faucet balance, or a minor syntax mistake (like a missing semicolon), the node must go through another full prompting round, increasing time-to-resolution, cost, and token consumption.
+- **High Latency**: Relying on external Clients to classify basic developer intents (like "compile my project") introduces significant latency and API costs.
 
 ### 1.3. Monad's Parallel EVM Landscape
 Monad represents a monumental advancement in blockchain scaling, achieving up to 10,000 transactions per second (TPS) through parallel execution, pipelined consensus, and the custom MonadDb storage backend. To harness the power of Monad, developers cannot write standard, serial-centric Solidity code. Parallel execution introduces the risk of state contention and storage slot conflicts. If multiple parallel transactions write to the same storage variables, they conflict and are re-executed sequentially, degrading the performance benefits of Monad.
@@ -29,24 +29,24 @@ Monad represents a monumental advancement in blockchain scaling, achieving up to
 Therefore, the Monad ecosystem requires a new class of developer tooling that:
 1. Standardizes parallel EVM storage layout optimizations.
 2. Automates the compilation, security auditing, and deployment loops.
-3. Exposes a clean, structured Model Context Protocol (MCP) server transport so AI agents can write, audit, heal, and deploy smart contracts on Monad without human intervention.
+3. Exposes a clean, structured Model Context Protocol (MCP) server transport so Automated nodes can write, audit, heal, and deploy smart contracts on Monad without human intervention.
 
-**MonadForge AI** is engineered from the ground up as this agent-native, local-first execution runtime.
+**MonadForge** is engineered from the ground up as this node-native, local-first execution runtime.
 
 ---
 
-## 2. MonadForge AI Architecture & Topological Workflow Orchestration
+## 2. MonadForge Architecture & Topological Workflow Orchestration
 
-MonadForge AI is designed as a modular, local-first monorepo consisting of 9 core engines. It operates as an execution runtime, completely free of cloud databases, SaaS subscriptions, authentication layers, or user dashboards.
+MonadForge is designed as a modular, local-first monorepo consisting of 9 core engines. It operates as an execution runtime, completely free of cloud databases, SaaS subscriptions, authentication layers, or user dashboards.
 
 ```mermaid
 graph TD
-    client[AI Agent / IDE Client <br> Claude Code / Cursor / Windsurf] 
+    client[Automated Node / IDE Client <br> Claude Code / Cursor / Windsurf] 
     -- stdio --
     mcp[MCP Server / CLI Bin]
     
-    subgraph MonadForge AI Runtime Engine
-        agent_runtime[Agent Runtime Engine]
+    subgraph MonadForge Runtime Engine
+        agent_runtime[Node Runtime Engine]
         composition[Skill Composition Engine]
         intent[Intent Parse Engine]
         plan[Planning Engine]
@@ -79,7 +79,7 @@ graph TD
 ```
 
 ### 2.1. The 9 Core Engines and Responsibilities
-1. **Intent Parsing Engine (`@monadforge/intent`)**: Classifies natural language prompts into structured parameter maps without LLM dependencies.
+1. **Intent Parsing Engine (`@monadforge/intent`)**: Classifies natural language prompts into structured parameter maps without Client dependencies.
 2. **Planning Engine (`@monadforge/plan`)**: Converts structured intents into execution steps, automatically enforcing security checks before deployments.
 3. **Skill Composition Engine (`@monadforge/composition`)**: Coordinates multi-stage workflows using directed acyclic graphs (DAGs) and topological sort algorithms.
 4. **Skills Router (`@monadforge/skills`)**: Maps abstract workflow step names to their corresponding tool handlers.
@@ -617,10 +617,10 @@ export class AuditEngine implements IAuditEngine {
 This example compiles a contract, catches failure exceptions, and applies repairs.
 
 ```typescript
-import { AgentRuntimeEngine } from '@monadforge/ai';
+import { NodeRuntimeEngine } from '@monadforge/automated';
 
 async function executeDeploymentPipeline() {
-  const runtime = new AgentRuntimeEngine();
+  const runtime = new NodeRuntimeEngine();
   const context = {
     deployerPrivateKey: process.env.DEPLOYER_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000000'
   };
@@ -649,7 +649,7 @@ executeDeploymentPipeline().catch(console.error);
 This script audits a contract and writes an architecture report.
 
 ```typescript
-import { AuditEngine, ArchitectureReviewEngine } from '@monadforge/ai';
+import { AuditEngine, ArchitectureReviewEngine } from '@monadforge/automated';
 
 const targetContract = `
 pragma solidity ^0.8.20;
@@ -847,12 +847,12 @@ contract ParallelNFT {
 
 ---
 
-## 6. Monad Agent Standard (MAS) Specifications
+## 6. Monad Node Standard (MNS) Specifications
 
-The Monad Agent Standard (MAS) defines JSON schemas and payloads for interoperability between developer agents, IDE clients, and execution runtimes.
+The Monad Node Standard (MNS) defines JSON schemas and payloads for interoperability between developer nodes, IDE clients, and execution runtimes.
 
 ### 6.1. Skill Definition Schema
-Exposes tool metadata to external orchestration agents (e.g., Claude Code, Cursor).
+Exposes tool metadata to external orchestration nodes (e.g., Claude Code, Cursor).
 
 ```json
 {
@@ -1010,4 +1010,4 @@ Defines the local project state structure stored in `.monadforge/memory/${projec
 
 ## 7. Conclusion
 
-MonadForge AI is a shift in blockchain developer tooling, transforming open-loop environments into self-healing execution layers. By exposing capabilities through the Model Context Protocol, MonadForge AI enables AI developer agents to write, compile, audit, and deploy smart contracts on Monad autonomously. Furthermore, by integrating parallel-friendly storage layouts directly into its templates and optimization guides, MonadForge AI ensures that generated protocols are optimized for Monad's high-performance parallel execution engine.
+MonadForge is a shift in blockchain developer tooling, transforming open-loop environments into self-healing execution layers. By exposing capabilities through the Model Context Protocol, MonadForge enables Automated developer nodes to write, compile, audit, and deploy smart contracts on Monad autonomously. Furthermore, by integrating parallel-friendly storage layouts directly into its templates and optimization guides, MonadForge ensures that generated protocols are optimized for Monad's high-performance parallel execution engine.

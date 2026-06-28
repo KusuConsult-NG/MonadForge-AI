@@ -1,6 +1,6 @@
 import { IntentEngine, StructuredIntent } from "@monadforge/intent";
 import { PlanningEngine, ExecutionPlan } from "@monadforge/plan";
-import { AgentRuntimeEngine } from "@monadforge/agent-runtime";
+import { NodeRuntimeEngine } from "@monadforge/node-runtime";
 import { ActionLayer } from "@monadforge/actions";
 import { AuditEngine } from "@monadforge/audit";
 import { RepairEngine } from "@monadforge/repair";
@@ -8,20 +8,20 @@ import { SkillCompositionEngine } from "@monadforge/composition";
 import { ArchitectureReviewEngine } from "@monadforge/review";
 import { getConfig } from "@monadforge/sdk";
 import {
-  AgentIdentity,
-  AgentRouter,
-  AgentMarketplace,
+  NodeIdentity,
+  NodeRouter,
+  NodeMarketplace,
   MonetizedExecutor,
   MockPaymentAdapter,
   EthersPaymentAdapter,
-  AgentServer,
-} from "@monadforge/agent";
+  NodeServer,
+} from "@monadforge/node";
 import * as fs from "fs";
 import * as path from "path";
 
 const intentEngine = new IntentEngine();
 const planningEngine = new PlanningEngine();
-const agentRuntime = new AgentRuntimeEngine();
+const agentRuntime = new NodeRuntimeEngine();
 const actionLayer = new ActionLayer();
 const auditEngine = new AuditEngine();
 const repairEngine = new RepairEngine();
@@ -324,9 +324,9 @@ export const monadforge = {
       return reviewEngine.reviewArchitecture(contracts);
     },
   },
-  agent: {
-    getManifest: () => AgentIdentity.getManifest(),
-    getSkillPackages: () => AgentIdentity.getSkillPackages(),
+  node: {
+    getManifest: () => NodeIdentity.getManifest(),
+    getSkillPackages: () => NodeIdentity.getSkillPackages(),
     invokeAgent: async (
       targetAgentId: string,
       skillName: string,
@@ -334,7 +334,7 @@ export const monadforge = {
       paymentDetails?: any,
       context?: any,
     ) => {
-      return AgentRouter.invokeAgent(
+      return NodeRouter.invokeAgent(
         targetAgentId,
         skillName,
         params,
@@ -343,19 +343,19 @@ export const monadforge = {
       );
     },
     registerAgent: (agentId: string, manifest: any) => {
-      AgentRouter.registerAgent(agentId, manifest);
+      NodeRouter.registerAgent(agentId, manifest);
     },
-    getPricingManifest: () => AgentMarketplace.getPricingManifest(),
-    getReputation: () => AgentMarketplace.getReputation(),
+    getPricingManifest: () => NodeMarketplace.getPricingManifest(),
+    getReputation: () => NodeMarketplace.getReputation(),
     getExecutionHistory: (filterAgentId?: string) =>
-      AgentMarketplace.getExecutionHistory(filterAgentId),
-    recordExecution: (record: any) => AgentMarketplace.recordExecution(record),
+      NodeMarketplace.getExecutionHistory(filterAgentId),
+    recordExecution: (record: any) => NodeMarketplace.recordExecution(record),
     createExecutor: (paymentAdapter?: any) =>
       new MonetizedExecutor(paymentAdapter),
     createMockPaymentAdapter: () => new MockPaymentAdapter(),
     createEthersPaymentAdapter: (provider?: any) =>
       new EthersPaymentAdapter(provider),
-    createServer: (executor?: any) => new AgentServer(executor),
+    createServer: (executor?: any) => new NodeServer(executor),
   },
 };
 export default monadforge;

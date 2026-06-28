@@ -5,13 +5,13 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { createLogger } from "@monadforge/sdk";
-import { monadforge } from "@monadforge/ai";
+import { monadforge } from "@monadforge/automated";
 import { MemoryEngine } from "@monadforge/memory";
 import {
-  AgentIdentity,
-  AgentRouter,
-  AgentMarketplace,
-} from "@monadforge/agent";
+  NodeIdentity,
+  NodeRouter,
+  NodeMarketplace,
+} from "@monadforge/node";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -47,7 +47,7 @@ export function createMcpServer(): Server {
       tools: [
         {
           name: "create_project",
-          description: "Initialize a new MonadForge AI project structure.",
+          description: "Initialize a new MonadForge project structure.",
           inputSchema: {
             type: "object",
             properties: {
@@ -59,7 +59,7 @@ export function createMcpServer(): Server {
         {
           name: "generate_contract",
           description:
-            "Generate smart contracts using AI matching specified parameters.",
+            "Generate smart contracts using Automated matching specified parameters.",
           inputSchema: {
             type: "object",
             properties: {
@@ -215,7 +215,7 @@ export function createMcpServer(): Server {
         {
           name: "discover_skills",
           description:
-            "List all registered agent capabilities, packaging metadata, pricing, and schemas.",
+            "List all registered node capabilities, packaging metadata, pricing, and schemas.",
           inputSchema: { type: "object", properties: {} },
         },
         {
@@ -246,18 +246,18 @@ export function createMcpServer(): Server {
         },
         {
           name: "discover_agents",
-          description: "Discover other agents registered in the network.",
+          description: "Discover other nodes registered in the network.",
           inputSchema: { type: "object", properties: {} },
         },
         {
           name: "invoke_agent",
-          description: "Orchestrate/invoke another agent for a specific task.",
+          description: "Orchestrate/invoke another node for a specific task.",
           inputSchema: {
             type: "object",
             properties: {
               targetAgentId: {
                 type: "string",
-                description: "The ID of the target agent.",
+                description: "The ID of the target node.",
               },
               skillName: {
                 type: "string",
@@ -470,13 +470,13 @@ export function createMcpServer(): Server {
           break;
         }
         case "discover_skills": {
-          result = AgentMarketplace.getAvailableSkills();
+          result = NodeMarketplace.getAvailableSkills();
           break;
         }
         case "execute_skill": {
           const { skillName, params, paymentDetails } = args as any;
-          result = await AgentRouter.invokeAgent(
-            "monadforge-ai",
+          result = await NodeRouter.invokeAgent(
+            "monadforge-node",
             skillName,
             params,
             paymentDetails,
@@ -484,13 +484,13 @@ export function createMcpServer(): Server {
           break;
         }
         case "discover_agents": {
-          result = AgentRouter.getRegisteredAgents();
+          result = NodeRouter.getRegisteredAgents();
           break;
         }
         case "invoke_agent": {
           const { targetAgentId, skillName, params, paymentDetails } =
             args as any;
-          result = await AgentRouter.invokeAgent(
+          result = await NodeRouter.invokeAgent(
             targetAgentId,
             skillName,
             params,
@@ -499,7 +499,7 @@ export function createMcpServer(): Server {
           break;
         }
         case "get_pricing": {
-          result = AgentMarketplace.getPricingManifest();
+          result = NodeMarketplace.getPricingManifest();
           break;
         }
         default:

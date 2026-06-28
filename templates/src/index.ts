@@ -152,7 +152,7 @@ main().catch((error) => {
         deploymentScripts: {
           [`scripts/deploy.ts`]: deployScript,
         },
-        readme: `# ${name} Upgradeable ERC20 Token\nGenerated via MonadForge AI.`,
+        readme: `# ${name} Upgradeable ERC20 Token\nGenerated via MonadForge.`,
         envExample: `PRIVATE_KEY=`,
       };
     }
@@ -207,7 +207,7 @@ main().catch((error) => {
       deploymentScripts: {
         [`scripts/deploy.ts`]: deployScript,
       },
-      readme: `# ${name} ERC20 Token\nGenerated via MonadForge AI.`,
+      readme: `# ${name} ERC20 Token\nGenerated via MonadForge.`,
       envExample: `PRIVATE_KEY=`,
     };
   }
@@ -269,7 +269,7 @@ main().catch((error) => {
       deploymentScripts: {
         [`scripts/deploy.ts`]: deployScript,
       },
-      readme: `# ${name} ERC721 NFT\nGenerated via MonadForge AI.`,
+      readme: `# ${name} ERC721 NFT\nGenerated via MonadForge.`,
       envExample: `PRIVATE_KEY=`,
     };
   }
@@ -315,7 +315,7 @@ contract SimpleStaking is ReentrancyGuard {
       },
       tests: {},
       deploymentScripts: {},
-      readme: `# Simple Staking Contract\nGenerated via MonadForge AI.`,
+      readme: `# Simple Staking Contract\nGenerated via MonadForge.`,
       envExample: ``,
     };
   }
@@ -344,7 +344,7 @@ contract DAOTreasury is Ownable {
       },
       tests: {},
       deploymentScripts: {},
-      readme: `# DAO Treasury Contract\nGenerated via MonadForge AI.`,
+      readme: `# DAO Treasury Contract\nGenerated via MonadForge.`,
       envExample: ``,
     };
   }
@@ -415,7 +415,7 @@ main().catch((error) => {
       deploymentScripts: {
         [`scripts/deploy.ts`]: deployScript,
       },
-      readme: `# ${name} ERC1155 MultiToken\nGenerated via MonadForge AI.`,
+      readme: `# ${name} ERC1155 MultiToken\nGenerated via MonadForge.`,
       envExample: `PRIVATE_KEY=`,
     };
   }
@@ -438,7 +438,7 @@ contract ${name} is ERC20 {
     uint256 public reserve0;
     uint256 public reserve1;
 
-    constructor(address _token0, address _token1) ERC20("MonadForge AI LP Share", "MF-LP") {
+    constructor(address _token0, address _token1) ERC20("MonadForge LP Share", "MF-LP") {
         token0 = IERC20(_token0);
         token1 = IERC20(_token1);
     }
@@ -566,7 +566,7 @@ main().catch((error) => {
       deploymentScripts: {
         [`scripts/deploy.ts`]: deployScript,
       },
-      readme: `# ${name} Constant-Product AMM\nGenerated via MonadForge AI.`,
+      readme: `# ${name} Constant-Product AMM\nGenerated via MonadForge.`,
       envExample: `PRIVATE_KEY=`,
     };
   }

@@ -4,7 +4,7 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 
 async function build() {
-  console.log('Building MonadForge AI (Option B Monolithic Bundle)...');
+  console.log('Building MonadForge (Option B Monolithic Bundle)...');
 
   const distDir = path.resolve(__dirname, 'dist');
   if (!fs.existsSync(distDir)) {

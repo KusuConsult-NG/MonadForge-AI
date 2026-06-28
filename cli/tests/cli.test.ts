@@ -48,7 +48,7 @@ const mockWriteFileSync = fs.writeFileSync as jest.Mock;
 const mockMkdirSync = fs.mkdirSync as jest.Mock;
 
 // Mock the unified SDK
-jest.mock("@monadforge/ai", () => {
+jest.mock("@monadforge/automated", () => {
   return {
     monadforge: {
       tools: {
@@ -228,7 +228,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should block deploy if security audit flags critical/high issues", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.tools.audit.mockResolvedValueOnce({
       riskScore: 80,
       issues: [
@@ -296,7 +296,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should handle init command failure", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.tools.createProject.mockRejectedValueOnce(
       new Error("mock init failure"),
     );
@@ -340,7 +340,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should handle continue command failure", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.engine.continue.mockResolvedValueOnce({
       success: false,
       message: "mock continue failure",
@@ -360,7 +360,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should handle audit command print issues", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.tools.audit.mockResolvedValueOnce({
       riskScore: 50,
       issues: [
@@ -414,7 +414,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should handle deploy command deployment failure", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.actions.deploy.mockResolvedValueOnce({ status: "failed" });
 
     const exitSpy = jest
@@ -462,7 +462,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should handle continue command failure with empty message fallback", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.engine.continue.mockResolvedValueOnce({
       success: false,
     });
@@ -481,7 +481,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should block deploy if security audit flags High severity issues", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.tools.audit.mockResolvedValueOnce({
       riskScore: 60,
       issues: [
@@ -509,7 +509,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should handle deploy success with empty status, contractAddress, and transactionHash fallback", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.actions.deploy.mockResolvedValueOnce({
       // status: undefined (falls back to "success")
       // contractAddress: undefined
@@ -527,7 +527,7 @@ describe("Simplified CLI Unit Tests", () => {
   });
 
   it("should handle deploy success with verification status and print it", async () => {
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.actions.deploy.mockResolvedValueOnce({
       status: "success",
       metadata: {
@@ -558,7 +558,7 @@ describe("Simplified CLI Unit Tests", () => {
 
   it("should handle monadforge.json with missing name and contractsDir in deploy and continue commands", async () => {
     mockMonadforgeJsonContent = "{}";
-    const { monadforge } = require("@monadforge/ai");
+    const { monadforge } = require("@monadforge/automated");
     monadforge.actions.deploy.mockResolvedValueOnce({
       status: "success",
       contractAddress: "0x123",

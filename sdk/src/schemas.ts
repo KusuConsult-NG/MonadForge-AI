@@ -35,7 +35,7 @@ export const SkillPackageSchema = z
   })
   .passthrough();
 
-// Agent Manifest Schema (Agent Identity Layer, ERC-8004 aligned)
+// Node Manifest Schema (Node Identity Layer, ERC-8004 aligned)
 export const AgentManifestSchema = z
   .object({
     agentId: z.string(),
@@ -125,7 +125,7 @@ export const DeploymentResultSchema = z.object({
   implementationVerificationMessage: z.string().optional(),
 });
 
-// 7. Full Execution Trace Schema (Inspectable agent run logs)
+// 7. Full Execution Trace Schema (Inspectable node run logs)
 export const ExecutionTraceSchema = z.object({
   traceId: z.string(),
   projectId: z.string(),

@@ -2,7 +2,7 @@
   "name": "@monadforge/cli",
   "version": "1.0.0",
   "private": true,
-  "description": "CLI interface for MonadForge AI",
+  "description": "CLI interface for MonadForge",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -20,10 +20,10 @@
     "@monadforge/sdk": "*",
     "@monadforge/templates": "*",
     "@monadforge/runtime": "*",
-    "@monadforge/agent-runtime": "*",
+    "@monadforge/node-runtime": "*",
     "@monadforge/review": "*",
     "@monadforge/benchmarks": "*",
-    "@monadforge/ai": "*",
+    "@monadforge/automated": "*",
     "commander": "^12.0.0",
     "dotenv": "^16.4.5"
   },

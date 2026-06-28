@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea or new skill for MonadForge AI
+about: Suggest an idea or new skill for MonadForge
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''

@@ -1,9 +1,9 @@
 import { runBenchmarks } from "../run";
-import { AgentRuntimeEngine } from "@monadforge/agent-runtime";
+import { NodeRuntimeEngine } from "@monadforge/node-runtime";
 import * as fs from "fs";
 import * as path from "path";
 
-describe("MonadForge AI Benchmarks Unit Tests", () => {
+describe("MonadForge Benchmarks Unit Tests", () => {
   const reportPath = path.resolve(process.cwd(), "benchmark-report.md");
 
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe("MonadForge AI Benchmarks Unit Tests", () => {
   it("should run benchmark tasks, record metrics, and produce markdown report", async () => {
     // Mock the runtime executeGoal to avoid real long runs during test
     const executeGoalSpy = jest
-      .spyOn(AgentRuntimeEngine.prototype, "executeGoal")
+      .spyOn(NodeRuntimeEngine.prototype, "executeGoal")
       .mockResolvedValue({
         success: true,
         intent: {
@@ -61,7 +61,7 @@ describe("MonadForge AI Benchmarks Unit Tests", () => {
       });
 
     const report = await runBenchmarks();
-    expect(report).toContain("MonadForge AI Infrastructure Benchmarks Report");
+    expect(report).toContain("MonadForge Infrastructure Benchmarks Report");
     expect(report).toContain("Build ERC20");
     expect(report).toContain("Build AMM");
     expect(fs.existsSync(reportPath)).toBe(true);

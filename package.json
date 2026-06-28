@@ -2,7 +2,7 @@
   "name": "monadforge-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "AI-native developer toolkit for Monad",
+  "description": "Automated developer toolkit for Monad",
   "workspaces": [
     "mcp",
     "skills",
@@ -18,8 +18,8 @@
     "repair",
     "memory",
     "composition",
-    "agent-runtime",
-    "agent",
+    "node-runtime",
+    "node",
     "review",
     "benchmarks",
     "monadforge"

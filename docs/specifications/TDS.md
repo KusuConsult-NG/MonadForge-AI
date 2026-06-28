@@ -1,9 +1,9 @@
-# MONADFORGE AI - TECHNICAL DESIGN SPECIFICATION (TDS)
+# MONADFORGE - TECHNICAL DESIGN SPECIFICATION (TDS)
 
 ## VOLUME 1: FOUNDATION & SPRINT 1
 
 ### SECTION 1: SYSTEM OVERVIEW
-MonadForge AI is an AI-native developer toolkit for the Monad ecosystem, providing local-only, database-free compilation, templates, security analysis, deployment, and documentation tools.
+MonadForge is an Automated developer toolkit for the Monad ecosystem, providing local-only, database-free compilation, templates, security analysis, deployment, and documentation tools.
 
 * **Primary objective:** Transform natural language instructions and local developer workflows into compiled, audited, and deployed Monad smart contracts.
 * **Version 1 Scope:** MCP Server, Knowledge Engine, Template Engine, Deployment Engine, Audit Engine, Wallet Engine (integrated in deploy), CLI.
@@ -15,13 +15,13 @@ MonadForge AI is an AI-native developer toolkit for the Monad ecosystem, providi
 ```
 monadforge/
 ├── cli/          # Command-line interface package (monadforge)
-├── mcp/          # Model Context Protocol server exposing tools to AI editors
+├── mcp/          # Model Context Protocol server exposing tools to Automated editors
 ├── sdk/          # Core SDK with shared configs, log context, and vector client wrappers
 ├── templates/    # Smart contract templates and metadata generator
 ├── deploy/       # Smart contract compilation, wallet engine, and deployment coordinator
 ├── audit/        # Static security audit scanning engine
 ├── knowledge/    # authoritative documentation search and indexing engine
-├── skills/       # AI developer agent prompt skills
+├── skills/       # Automated developer node prompt skills
 ├── docs/         # Architecture and technical specifications
 └── tests/        # Integration and E2E test suites
 ```
@@ -30,7 +30,7 @@ monadforge/
 
 ### SECTION 3: PACKAGE RESPONSIBILITIES
 * **@monadforge/cli:** Commander-based terminal interface. Manages interactive developer workflows, prompts, configuration setups, and formats outputs.
-* **@monadforge/mcp:** MCP server enabling AI coding assistants (e.g. Cursor, Claude Desktop) to invoke native Monad tools.
+* **@monadforge/mcp:** MCP server enabling Automated coding assistants (e.g. Cursor, Claude Desktop) to invoke native Monad tools.
 * **@monadforge/sdk:** Common configuration validation, logging context handlers, and Qdrant client adapters.
 * **@monadforge/templates:** ERC20, ERC721, ERC1155, Vesting, and Liquid Staking Solidity contract files, deployment script templates, and Jest tests.
 * **@monadforge/deploy:** Solc compiler and EVM Wallet execution engine. Handles transaction generation, signing, and RPC broadcasting.
@@ -40,7 +40,7 @@ monadforge/
 ---
 
 ### SECTION 4: DATABASE DESIGN
-* **Database-Free Design:** MonadForge AI requires **no external SQL database** for operation.
+* **Database-Free Design:** MonadForge requires **no external SQL database** for operation.
 * **Local Logs:** Deployment events and metadata are written locally to the project directory under `.monadforge/deployments.json`.
 * **Configuration:** Project metadata is loaded from local `monadforge.json` files and environment variables.
 

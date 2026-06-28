@@ -1,7 +1,7 @@
 {
-  "name": "@monadforge/ai",
+  "name": "@monadforge/automated",
   "version": "1.0.0",
-  "description": "Unified entrypoint, SDK wrapper, CLI and MCP server for MonadForge AI",
+  "description": "Unified entrypoint, SDK wrapper, CLI and MCP server for MonadForge",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {

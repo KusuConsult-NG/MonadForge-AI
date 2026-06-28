@@ -1,15 +1,15 @@
-# Monad Agent Standard (MAS): Skill Registry Specification
+# Monad Node Standard (MNS): Skill Registry Specification
 
 Version: `1.0.0`
 Status: **Proposed**
 
-This specification defines the registry model, packaging formats, and discovery protocols for community-developed skills on the **MonadForge AI** execution runtime.
+This specification defines the registry model, packaging formats, and discovery protocols for community-developed skills on the **MonadForge** execution runtime.
 
 ---
 
 ## 1. Architectural Philosophy
 
-AI agents require a modular, standard interface to discover, load, and execute capabilities. By formalizing the skill packaging layout, we enable the community to build, share, and register custom integrations (e.g., lending pools, liquidity bridges, oracle feeds) that any MAS-conformant agent can instantly ingest.
+Automated nodes require a modular, standard interface to discover, load, and execute capabilities. By formalizing the skill packaging layout, we enable the community to build, share, and register custom integrations (e.g., lending pools, liquidity bridges, oracle feeds) that any MNS-conformant node can instantly ingest.
 
 ---
 
@@ -33,11 +33,11 @@ Every skill must be packaged as a self-contained directory (or npm module under 
 
 ## 3. Skill Manifest Specification (`skill.json`)
 
-The manifest defines the validation contract between the agent and the skill. It must strictly validate against the MAS `SkillSchema`:
+The manifest defines the validation contract between the node and the skill. It must strictly validate against the MNS `SkillSchema`:
 
 ```json
 {
-  "$schema": "https://monadforge.ai/schemas/mas/skill.schema.json",
+  "$schema": "https://monadforge.automated/schemas/mas/skill.schema.json",
   "name": "borrow_assets",
   "version": "1.0.0",
   "description": "Borrow assets from a lending protocol on Monad.",
@@ -113,7 +113,7 @@ export default class BorrowAssetsHandler implements SkillHandler {
 ## 5. Registry Discovery Protocol
 
 ### A. Local Discovery
-The agent runtime resolves local skill directories by reading the `.monadforge/skills/` workspace folder:
+The node runtime resolves local skill directories by reading the `.monadforge/skills/` workspace folder:
 1. Scans `.monadforge/skills/*/skill.json`.
 2. Registers matching manifests dynamically.
 
@@ -122,7 +122,7 @@ Community skills are published to npm using the `@monadforge-skills/` scope.
 To load a registry-based skill, the developer updates their project config:
 ```json
 {
-  "name": "my-agent-project",
+  "name": "my-node-project",
   "dependencies": {
     "@monadforge-skills/borrow-assets": "^1.0.0"
   }

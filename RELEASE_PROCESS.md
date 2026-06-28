@@ -1,6 +1,6 @@
-# MonadForge AI Release Process
+# MonadForge Release Process
 
-This document outlines the standard release process for MonadForge AI updates.
+This document outlines the standard release process for MonadForge updates.
 
 ---
 
@@ -43,5 +43,5 @@ git push origin v1.0.0
 Once the GitHub Action completes successfully, verify the package is available on npm:
 
 ```bash
-npm info @monadforge/ai
+npm info @monadforge/automated
 ```

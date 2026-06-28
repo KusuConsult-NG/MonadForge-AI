@@ -13,7 +13,7 @@
     { "path": "../audit" },
     { "path": "../mcp" },
     { "path": "../runtime" },
-    { "path": "../agent-runtime" },
+    { "path": "../node-runtime" },
     { "path": "../review" },
     { "path": "../benchmarks" },
     { "path": "../monadforge" }

@@ -10,6 +10,6 @@ if (fs.existsSync(mcpPath)) {
     process.exit(1);
   });
 } else {
-  console.error('Error: MonadForge AI MCP binary not found. Please run npm run build.');
+  console.error('Error: MonadForge MCP binary not found. Please run npm run build.');
   process.exit(1);
 }

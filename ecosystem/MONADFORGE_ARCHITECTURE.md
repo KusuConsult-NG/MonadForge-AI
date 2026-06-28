@@ -1,12 +1,12 @@
-# MonadForge AI: Technical Architecture
+# MonadForge: Technical Architecture
 
-This document describes the modular architecture of the **MonadForge AI** execution runtime and details how each engine conforms to the **Monad Agent Standard (MAS)**.
+This document describes the modular architecture of the **MonadForge** execution runtime and details how each engine conforms to the **Monad Node Standard (MNS)**.
 
 ---
 
 ## 1. Modular Subsystem Layout
 
-MonadForge AI is organized as a monorepo consisting of private modular packages, compiled into a single public bundle (`@monadforge/ai`):
+MonadForge is organized as a monorepo consisting of private modular packages, compiled into a single public bundle (`@monadforge/automated`):
 
 ### A. Intent Engine (`@monadforge/intent`)
 Parses unstructured natural language prompts into typed parameter objects. It validates outputs against `StructuredIntentSchema`.
@@ -28,7 +28,7 @@ Performs static analysis checks on Solidity ASTs, scanning for 15 risk categorie
 
 ---
 
-## 2. Agent Workflow Lifecycle
+## 2. Node Workflow Lifecycle
 
 ```
  Developer Prompt (e.g., "Build a staking contract")

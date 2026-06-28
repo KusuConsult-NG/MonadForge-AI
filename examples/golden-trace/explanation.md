@@ -1,4 +1,4 @@
-# MonadForge AI Execution Rationale
+# MonadForge Execution Rationale
 
 **Trace ID:** `tr_1782203695088`  
 **Project:** `benchmark-staking`  
@@ -6,7 +6,7 @@
 **Final Status:** ✅ Success
 
 ## 1. Intent Analysis
-The agent parsed a **generate** intent targeting the **STAKING** domain.  
+The node parsed a **generate** intent targeting the **STAKING** domain.  
 
 ## 2. Planning & Composition Decisions
 The planning engine generated a topological composition of **3 steps**:
@@ -27,4 +27,4 @@ The self-healing engine executed **1 repair operations**:
 - **Block Explorer Verification:** ✅ Verified (Contract verified on Monad block explorer.)
 
 ---
-*Generated autonomously by MonadForge AI Explainability Layer.*
+*Generated autonomously by MonadForge Explainability Layer.*

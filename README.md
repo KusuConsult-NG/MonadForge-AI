@@ -1,22 +1,22 @@
-# MonadForge AI
+# MonadForge
 
-> **AI-native execution runtime for the Monad blockchain ecosystem.**  
-> Build, audit, repair, and deploy EVM smart contracts with a single `npx` command or from any AI agent via MCP.
+> **Automated execution runtime for the Monad blockchain ecosystem.**  
+> Build, audit, repair, and deploy EVM smart contracts with a single `npx` command or from any Automated node via MCP.
 
 [![CI](https://github.com/monadforge/monadforge/actions/workflows/ci.yml/badge.svg)](https://github.com/monadforge/monadforge/actions)
-[![npm](https://img.shields.io/npm/v/@monadforge/ai)](https://www.npmjs.com/package/@monadforge/ai)
+[![npm](https://img.shields.io/npm/v/@monadforge/automated)](https://www.npmjs.com/package/@monadforge/automated)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ---
 
-## Why MonadForge AI?
+## Why MonadForge?
 
-> **Important Note:** MonadForge AI is not a code generator. It is a deterministic execution layer that enables AI agents to plan, audit, repair, deploy, verify, and continue Monad applications through a standardized execution protocol.
+> **Important Note:** MonadForge is not a code generator. It is a deterministic execution layer that enables Automated nodes to plan, audit, repair, deploy, verify, and continue Monad applications through a standardized execution protocol.
 
 Standard developer toolkits (Hardhat, Foundry) are designed for human input.  
-AI agents struggle with their asynchronous, multi-command outputs and lack of structured, machine-readable results.
+Automated nodes struggle with their asynchronous, multi-command outputs and lack of structured, machine-readable results.
 
-**MonadForge AI is agent-first:**
+**MonadForge is node-first:**
 
 | Capability | What it means |
 |---|---|
@@ -24,7 +24,7 @@ AI agents struggle with their asynchronous, multi-command outputs and lack of st
 | **Self-Healing Runtime** | Automatically diagnoses, repairs, and retries failing contract compilations |
 | **Economic Security** | 15 AST-based audit rules covering reentrancy, access control, oracle manipulation, flash loans, MEV |
 | **Parallel EVM Optimization** | Detects and auto-refactors storage slot contention patterns for Monad's 10,000 TPS engine |
-| **Agentic Value Flows** | Native ERC-20 / MON on-chain value flow creation, execution, and verification |
+| **Automated Value Flows** | Native ERC-20 / MON on-chain value flow creation, execution, and verification |
 | **MCP Server** | Plugs into Cursor, Claude Desktop, and Windsurf out of the box |
 
 ---
@@ -33,7 +33,7 @@ AI agents struggle with their asynchronous, multi-command outputs and lack of st
 
 ```
                   ┌────────────────────────────────────┐
-                  │       @monadforge/ai (Wrapper)     │
+                  │       @monadforge/automated (Wrapper)     │
                   └──────────────┬─────────────────────┘
                                  │
               ┌──────────────────┼──────────────────┐
@@ -44,7 +44,7 @@ AI agents struggle with their asynchronous, multi-command outputs and lack of st
               └──────────────────┼──────────────────┘
                                  │
                     ┌────────────▼────────────┐
-                    │   Agent Runtime Engine   │
+                    │   Node Runtime Engine   │
                     └────────────┬────────────┘
                                  │
          ┌───────────┬───────────┼───────────┬───────────┐
@@ -61,12 +61,12 @@ AI agents struggle with their asynchronous, multi-command outputs and lack of st
 
 ### Install globally
 ```bash
-npm install -g @monadforge/ai
+npm install -g @monadforge/automated
 ```
 
 ### Or run with npx (no install required)
 ```bash
-npx @monadforge/ai init --name my-defi-project
+npx @monadforge/automated init --name my-defi-project
 ```
 
 ### Configure environment
@@ -183,12 +183,12 @@ Options:
 
 ### Installation
 ```bash
-npm install @monadforge/ai
+npm install @monadforge/automated
 ```
 
 ### Basic Import
 ```typescript
-import { monadforge } from '@monadforge/ai';
+import { monadforge } from '@monadforge/automated';
 ```
 
 ---
@@ -210,7 +210,7 @@ Returns `true` if the intent is actionable (has a known type and domain).
 ### `monadforge.engine`
 
 #### `run(options: { goal: string; context?: any }): Promise<AgentTaskResult>`
-Runs a full autonomous agent task from a natural language goal.
+Runs a full autonomous node task from a natural language goal.
 ```typescript
 const result = await monadforge.engine.run({ goal: "Audit and deploy a staking contract" });
 console.log(result.success);      // boolean
@@ -219,7 +219,7 @@ console.log(result.repaired);     // boolean — true if auto-repair was applied
 ```
 
 #### `continue(options: { projectId: string; prompt: string }): Promise<AgentTaskResult>`
-Resumes a previous agent task using its project ID and memory context.
+Resumes a previous node task using its project ID and memory context.
 
 ---
 
@@ -251,7 +251,7 @@ Stakes tokens via the `stake()` or `stake(uint256)` function.
 
 ### `monadforge.actions.flow` — Value Flow API
 
-The flow namespace provides primitives for building value-guided, self-monetizing on-chain agents using structured value flows.
+The flow namespace provides primitives for building value-guided, self-monetizing on-chain nodes using structured value flows.
 
 #### `createFlow(options): Promise<FlowObject>`
 Creates a value flow session with a deterministic ID and EIP-681 payment URL.
@@ -328,12 +328,12 @@ Reviews the overall contract architecture for patterns and improvements.
 
 ## MCP Server Integration
 
-Connect MonadForge AI directly to Cursor, Claude Desktop, or Windsurf.
+Connect MonadForge directly to Cursor, Claude Desktop, or Windsurf.
 
 ### Cursor
 1. **Cursor Settings → Features → MCP**
 2. Click **+ Add New MCP Server**
-3. Set command: `node /absolute/path/to/node_modules/@monadforge/ai/mcp/dist/index.js`
+3. Set command: `node /absolute/path/to/node_modules/@monadforge/automated/mcp/dist/index.js`
 
 ### Claude Desktop (`claude_desktop_config.json`)
 ```json
@@ -341,7 +341,7 @@ Connect MonadForge AI directly to Cursor, Claude Desktop, or Windsurf.
   "mcpServers": {
     "monadforge": {
       "command": "node",
-      "args": ["/absolute/path/to/node_modules/@monadforge/ai/mcp/dist/index.js"],
+      "args": ["/absolute/path/to/node_modules/@monadforge/automated/mcp/dist/index.js"],
       "env": {
         "DEPLOYER_PRIVATE_KEY": "0x...",
         "MONAD_RPC_URL": "https://testnet-rpc.monad.xyz"
@@ -372,7 +372,7 @@ Add to your workspace `.windsurf/mcp.json`:
 
 Monad processes transactions in parallel using an optimistic execution engine. Contracts that modify **shared global state variables** (e.g., `uint256 public totalSupply`) cause storage slot conflicts and speculative rollbacks, degrading throughput.
 
-MonadForge AI automatically detects (`MONAD-001`) and repairs these patterns:
+MonadForge automatically detects (`MONAD-001`) and repairs these patterns:
 
 **Before (sequential contention):**
 ```solidity
@@ -407,7 +407,7 @@ Releases are automated via GitHub Actions. Tag a release to trigger publish:
 ```bash
 git tag v1.0.1
 git push origin v1.0.1
-# Triggers .github/workflows/publish.yml → npm publish @monadforge/ai
+# Triggers .github/workflows/publish.yml → npm publish @monadforge/automated
 ```
 
 Requires `NPM_TOKEN` secret set in GitHub repository settings.

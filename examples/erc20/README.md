@@ -3,4 +3,4 @@
 This example implements a standard, secure ERC20 token with ownership management.
 
 ## Setup
-Compile and deploy using MonadForge AI.
+Compile and deploy using MonadForge.

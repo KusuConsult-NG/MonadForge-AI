@@ -1,4 +1,4 @@
-import { AgentRuntimeEngine } from "@monadforge/agent-runtime";
+import { NodeRuntimeEngine } from "@monadforge/node-runtime";
 import { createLogger } from "@monadforge/sdk";
 import * as fs from "fs";
 import * as path from "path";
@@ -16,8 +16,8 @@ export interface BenchmarkResult {
 }
 
 export async function runBenchmarks(): Promise<string> {
-  logger.info("Starting MonadForge AI Benchmarks suite");
-  const runtime = new AgentRuntimeEngine();
+  logger.info("Starting MonadForge Benchmarks suite");
+  const runtime = new NodeRuntimeEngine();
   const tasks = [
     {
       name: "Build ERC20",
@@ -84,7 +84,7 @@ export async function runBenchmarks(): Promise<string> {
   }
 
   // Generate markdown report
-  let report = `# MonadForge AI Infrastructure Benchmarks Report
+  let report = `# MonadForge Infrastructure Benchmarks Report
 
 Generated at: ${new Date().toISOString()}
 

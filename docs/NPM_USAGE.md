@@ -1,6 +1,6 @@
-# MonadForge AI npm Package Usage Guide
+# MonadForge npm Package Usage Guide
 
-The `@monadforge/ai` package provides unified access to all core engines, CLI binaries, and TypeScript declaration files for developer integration.
+The `@monadforge/automated` package provides unified access to all core engines, CLI binaries, and TypeScript declaration files for developer integration.
 
 ---
 
@@ -10,10 +10,10 @@ Install the package via npm or yarn:
 
 ```bash
 # Local installation
-npm install @monadforge/ai
+npm install @monadforge/automated
 
 # Global installation (recommended for CLI usage)
-npm install -g @monadforge/ai
+npm install -g @monadforge/automated
 ```
 
 ---
@@ -34,7 +34,7 @@ import {
   KnowledgeEngine,
   RuntimeEngine,
   ArchitectureReviewEngine
-} from '@monadforge/ai';
+} from '@monadforge/automated';
 
 // 1. Parse Developer Intent
 const intentEngine = new IntentEngine();
@@ -65,27 +65,27 @@ console.log(securityReview);
 
 ## CLI Usage
 
-MonadForge AI exposes the `monadforge` binary.
+MonadForge exposes the `monadforge` binary.
 
 ### 1. Project Initialization
 Initialize a new local project structure, config files, and memory system:
 
 ```bash
-npx @monadforge/ai init --name my-monad-project
+npx @monadforge/automated init --name my-monad-project
 ```
 
 ### 2. File and Smart Contract Generation
 Generate a Solidity contract from built-in templates (e.g., erc20, erc721, staking, dao, amm):
 
 ```bash
-npx @monadforge/ai generate erc20 --name ForgeToken --symbol FORGE --supply 1000000
+npx @monadforge/automated generate erc20 --name ForgeToken --symbol FORGE --supply 1000000
 ```
 
 ### 3. Static Code Audit
 Audit smart contracts inside the directory to detect security flaws:
 
 ```bash
-npx @monadforge/ai audit contracts/Token.sol
+npx @monadforge/automated audit contracts/Token.sol
 ```
 
 ### 4. Deploy Contracts
@@ -93,14 +93,14 @@ Compile and deploy the project's contracts to the Monad Testnet:
 
 ```bash
 export DEPLOYER_PRIVATE_KEY="0x..."
-npx @monadforge/ai deploy
+npx @monadforge/automated deploy
 ```
 
 ---
 
 ## Module Export Structure
 
-The package exports type definitions and classes matching the Monad Agent Standard (MAS):
+The package exports type definitions and classes matching the Monad Node Standard (MNS):
 
 ```typescript
 // Type Declarations

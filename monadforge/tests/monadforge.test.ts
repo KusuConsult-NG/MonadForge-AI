@@ -31,7 +31,7 @@ jest.mock("@monadforge/sdk", () => {
   };
 });
 
-describe("MonadForge AI Wrapper exports tests", () => {
+describe("MonadForge Wrapper exports tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     throwGetConfig = false;
@@ -317,47 +317,47 @@ describe("MonadForge AI Wrapper exports tests", () => {
     expect(reviewRes).toBeDefined();
   });
 
-  it("should perform agent operations", async () => {
-    expect(monadforge.agent).toBeDefined();
+  it("should perform node operations", async () => {
+    expect(monadforge.node).toBeDefined();
 
-    const manifest = monadforge.agent.getManifest();
-    expect(manifest.agentId).toBe("monadforge-ai");
+    const manifest = monadforge.node.getManifest();
+    expect(manifest.agentId).toBe("monadforge-node");
 
-    const pkgs = monadforge.agent.getSkillPackages();
+    const pkgs = monadforge.node.getSkillPackages();
     expect(pkgs.length).toBeGreaterThan(0);
 
-    const pricing = monadforge.agent.getPricingManifest();
+    const pricing = monadforge.node.getPricingManifest();
     expect(pricing.run_audit).toBeDefined();
 
-    const reputation = monadforge.agent.getReputation();
+    const reputation = monadforge.node.getReputation();
     expect(reputation.score).toBeDefined();
 
-    monadforge.agent.registerAgent("other-agent", {
-      agentId: "other-agent",
+    monadforge.node.registerAgent("other-node", {
+      agentId: "other-node",
       pricing: { search_docs: { price: "0.0", token: "MON" } },
     });
 
-    const invokeRes = await monadforge.agent.invokeAgent(
-      "other-agent",
+    const invokeRes = await monadforge.node.invokeAgent(
+      "other-node",
       "search_docs",
       { query: "test" },
     );
     expect(invokeRes.status).toBe("success");
 
-    monadforge.agent.recordExecution({
-      agentId: "monadforge-ai",
+    monadforge.node.recordExecution({
+      agentId: "monadforge-node",
       skillName: "search_docs",
       durationMs: 100,
       status: "success",
     });
 
-    const history = monadforge.agent.getExecutionHistory("monadforge-ai");
+    const history = monadforge.node.getExecutionHistory("monadforge-node");
     expect(history.length).toBeGreaterThan(0);
 
-    const executor = monadforge.agent.createExecutor();
+    const executor = monadforge.node.createExecutor();
     expect(executor).toBeDefined();
 
-    const adapter = monadforge.agent.createMockPaymentAdapter();
+    const adapter = monadforge.node.createMockPaymentAdapter();
     expect(adapter).toBeDefined();
   });
 });

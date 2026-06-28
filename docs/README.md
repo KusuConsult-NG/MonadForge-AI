@@ -1,6 +1,6 @@
-# MonadForge AI Documentation
+# MonadForge Documentation
 
-Welcome to the documentation repository for MonadForge AI, an AI-native developer toolkit for the Monad ecosystem.
+Welcome to the documentation repository for MonadForge, an Automated developer toolkit for the Monad ecosystem.
 
 ## Contents
 

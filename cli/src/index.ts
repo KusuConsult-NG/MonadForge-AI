@@ -7,7 +7,7 @@ import {
 import * as readline from "readline";
 import * as fs from "fs";
 import * as path from "path";
-import { monadforge } from "@monadforge/ai";
+import { monadforge } from "@monadforge/automated";
 import { ActionLayer } from "@monadforge/actions";
 
 const logger = createLogger("CLI");
@@ -15,7 +15,7 @@ const program = new Command();
 
 program
   .name("monadforge")
-  .description("AI-native developer toolkit for Monad")
+  .description("Automated developer toolkit for Monad")
   .version("1.0.0");
 
 function askConfirmation(question: string): Promise<boolean> {
@@ -84,7 +84,7 @@ export function askSelection(
 // 1. Init Command
 program
   .command("init")
-  .description("Initialize a new MonadForge AI project directory")
+  .description("Initialize a new MonadForge project directory")
   .option("-n, --name <name>", "Project name", "monad-project")
   .option("-i, --interactive", "Interactive configuration helper")
   .action(async (options) => {
@@ -114,7 +114,7 @@ program
         );
       }
 
-      console.log(`Initializing MonadForge AI project "${projectName}"...`);
+      console.log(`Initializing MonadForge project "${projectName}"...`);
       await monadforge.tools.createProject({
         name: projectName,
         contractsDir,

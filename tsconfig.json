@@ -28,8 +28,8 @@
     { "path": "repair" },
     { "path": "memory" },
     { "path": "composition" },
-    { "path": "agent-runtime" },
-    { "path": "agent" },
+    { "path": "node-runtime" },
+    { "path": "node" },
     { "path": "review" },
     { "path": "benchmarks" },
     { "path": "monadforge" }

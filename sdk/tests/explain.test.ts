@@ -67,13 +67,13 @@ describe("Explainability Engine", () => {
     const rationale = generateExecutionReasoning(trace);
 
     // Verify key sections are present in markdown output
-    expect(rationale).toContain("# MonadForge AI Execution Rationale");
+    expect(rationale).toContain("# MonadForge Execution Rationale");
     expect(rationale).toContain("**Trace ID:** `trace-123`");
     expect(rationale).toContain("**Project:** `project-abc`");
     expect(rationale).toContain("**Timestamp:** `2026-06-23T09:00:00Z`");
     expect(rationale).toContain("**Final Status:** ✅ Success");
     expect(rationale).toContain(
-      "The agent parsed a **deploy** intent targeting the **STAKING** domain.",
+      "The node parsed a **deploy** intent targeting the **STAKING** domain.",
     );
     expect(rationale).toContain("Developer constraints specified:");
     expect(rationale).toContain("- Must use ReentrancyGuard");
@@ -159,7 +159,7 @@ describe("Explainability Engine", () => {
     const rationale = generateExecutionReasoning(trace);
 
     expect(rationale).toContain(
-      "The agent parsed a **audit** intent targeting the **TOKEN** domain.",
+      "The node parsed a **audit** intent targeting the **TOKEN** domain.",
     );
     expect(rationale).not.toContain("Developer constraints specified:");
     expect(rationale).toContain("**Issues Diagnosed:** Syntax error");

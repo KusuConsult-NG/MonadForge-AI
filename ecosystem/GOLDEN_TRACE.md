@@ -1,6 +1,6 @@
-# MonadForge AI: Golden Trace Reference
+# MonadForge: Golden Trace Reference
 
-This document highlights the flagship end-to-end execution of **MonadForge AI** generating, auditing, repairing, deploying, and verifying a staking protocol on the Monad blockchain.
+This document highlights the flagship end-to-end execution of **MonadForge** generating, auditing, repairing, deploying, and verifying a staking protocol on the Monad blockchain.
 
 ---
 
@@ -15,7 +15,7 @@ The canonical example is recorded in [examples/golden-trace/trace.json](file:///
  Model Context Protocol (MCP) Server
         │
         ▼
- MonadForge AI [Agent Runtime Engine]
+ MonadForge [Node Runtime Engine]
         │
         ├──► 1. Plan generated: [generate_contract] -> [run_audit] -> [deploy_contract]
         │
@@ -35,6 +35,6 @@ The canonical example is recorded in [examples/golden-trace/trace.json](file:///
 ## 2. Walkthrough of Generated Files
 
 You can inspect the full golden trace artifacts:
-1. **Replayable Trace**: View [trace.json](file:///Users/mac/MONADFORGE%20AI/examples/golden-trace/trace.json) to see the exact payload format defined by the Monad Agent Standard (MAS).
+1. **Replayable Trace**: View [trace.json](file:///Users/mac/MONADFORGE%20AI/examples/golden-trace/trace.json) to see the exact payload format defined by the Monad Node Standard (MNS).
 2. **Audit & Self-Healing Explanation**: View [explanation.md](file:///Users/mac/MONADFORGE%20AI/examples/golden-trace/explanation.md) to read the explainability rationale explaining *why* decisions were made.
 3. **Solidity Code**: View [SimpleStaking.sol](file:///Users/mac/MONADFORGE%20AI/examples/golden-trace/contracts/SimpleStaking.sol) to inspect the final, secured staking contract.

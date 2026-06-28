@@ -1,0 +1,20 @@
+{
+  "name": "@monadforge/node",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@monadforge/sdk": "*",
+    "@monadforge/skills": "*",
+    "@monadforge/node-runtime": "*",
+    "ethers": "^6.11.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

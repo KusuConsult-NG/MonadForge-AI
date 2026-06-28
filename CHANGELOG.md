@@ -10,10 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-06-22
 
 ### Added
-- Created publishable npm workspace wrapper `@monadforge/ai`.
+- Created publishable npm workspace wrapper `@monadforge/automated`.
 - Implemented `review_architecture` and `create_nft` alias tools in the MCP Server.
-- Drafted the Monad Agent Standard (MAS) specification under `docs/MAS/`.
+- Drafted the Monad Node Standard (MNS) specification under `docs/MNS/`.
 - Pre-configured contract templates for erc20, erc721, dao, staking, amm, and marketplace.
 - Added actual examples inside `examples/` with Solidity files and tests.
-- Designed one-command setup: `npx @monadforge/ai init`.
+- Designed one-command setup: `npx @monadforge/automated init`.
 - Wrote GitHub Actions build and publish pipeline.

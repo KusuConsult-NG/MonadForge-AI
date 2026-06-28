@@ -1,28 +1,28 @@
-# Contributing to MonadForge AI
+# Contributing to MonadForge
 
-Thank you for contributing to MonadForge AI! This document provides guidelines for setting up your environment, adding new features (such as skills or MCP tools), and validating your changes.
+Thank you for contributing to MonadForge! This document provides guidelines for setting up your environment, adding new features (such as skills or MCP tools), and validating your changes.
 
 ---
 
 ## Project Structure
 
-MonadForge AI is structured as a TypeScript monorepo using npm/yarn workspaces.
+MonadForge is structured as a TypeScript monorepo using npm/yarn workspaces.
 
 ```
 ├── sdk/                # Shared logging, configuration, vector fallback databases
 ├── intent/             # NLP Intent Parsing Engine
 ├── plan/               # Planner and Workflow Steps Generator
-├── skills/             # Skill Routing and agent tool implementations
+├── skills/             # Skill Routing and node tool implementations
 ├── templates/          # Solidity Smart Contract templates (ERC20, ERC721, etc.)
 ├── actions/            # Low-level blockchain, compilation, and deployment tasks
 ├── repair/             # Self-healing diagnostics and code repair engine
 ├── memory/             # Local project state and deployment records
 ├── composition/        # Workflow step composer
-├── agent-runtime/      # Core execution loop and self-healing orchestration
+├── node-runtime/      # Core execution loop and self-healing orchestration
 ├── review/             # Architecture, design, security, and scalability reviewer
 ├── mcp/                # Model Context Protocol server stdio entrypoint
 ├── cli/                # Terminal CLI tool wrapper
-└── monadforge/            # Unified publishable SDK package (@monadforge/ai)
+└── monadforge/            # Unified publishable SDK package (@monadforge/automated)
 ```
 
 ---

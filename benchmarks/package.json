@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@monadforge/sdk": "*",
-    "@monadforge/agent-runtime": "*"
+    "@monadforge/node-runtime": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

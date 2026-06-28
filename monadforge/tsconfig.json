@@ -16,8 +16,8 @@
     { "path": "../composition" },
     { "path": "../knowledge" },
     { "path": "../runtime" },
-    { "path": "../agent-runtime" },
+    { "path": "../node-runtime" },
     { "path": "../review" },
-    { "path": "../agent" }
+    { "path": "../node" }
   ]
 }

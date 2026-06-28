@@ -3,13 +3,13 @@ import { createLogger } from "./logging";
 const logger = createLogger("Explainability");
 
 /**
- * Generates a structured markdown explanation of the agent's execution decisions,
+ * Generates a structured markdown explanation of the node's execution decisions,
  * planning steps, security audit repairs, and deployment outcomes.
  */
 export function generateExecutionReasoning(trace: any): string {
   logger.info(`Generating execution reasoning for trace: ${trace.traceId}`);
 
-  let md = `# MonadForge AI Execution Rationale\n\n`;
+  let md = `# MonadForge Execution Rationale\n\n`;
   md += `**Trace ID:** \`${trace.traceId}\`  \n`;
   md += `**Project:** \`${trace.projectId}\`  \n`;
   md += `**Timestamp:** \`${trace.timestamp}\`  \n`;
@@ -17,7 +17,7 @@ export function generateExecutionReasoning(trace: any): string {
 
   md += `## 1. Intent Analysis\n`;
   if (trace.intent) {
-    md += `The agent parsed a **${trace.intent.type}** intent targeting the **${trace.intent.domain?.toUpperCase()}** domain.  \n`;
+    md += `The node parsed a **${trace.intent.type}** intent targeting the **${trace.intent.domain?.toUpperCase()}** domain.  \n`;
     if (trace.intent.constraints && trace.intent.constraints.length > 0) {
       md += `**Developer constraints specified:**\n`;
       trace.intent.constraints.forEach((c: string) => {
@@ -68,6 +68,6 @@ export function generateExecutionReasoning(trace: any): string {
   }
   md += `\n`;
 
-  md += `---\n*Generated autonomously by MonadForge AI Explainability Layer.*`;
+  md += `---\n*Generated autonomously by MonadForge Explainability Layer.*`;
   return md;
 }

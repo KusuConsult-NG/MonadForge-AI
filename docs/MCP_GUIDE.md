@@ -1,18 +1,18 @@
-# MonadForge AI Model Context Protocol (MCP) Guide
+# MonadForge Model Context Protocol (MCP) Guide
 
-This guide details how to install, configure, integrate, and troubleshoot the MonadForge AI Model Context Protocol (MCP) server.
+This guide details how to install, configure, integrate, and troubleshoot the MonadForge Model Context Protocol (MCP) server.
 
-The MCP server exposes MonadForge AI's capabilities directly to AI IDEs and clients such as Cursor, Claude Desktop, and Windsurf.
+The MCP server exposes MonadForge's capabilities directly to Automated IDEs and clients such as Cursor, Claude Desktop, and Windsurf.
 
 ---
 
 ## Architecture Overview
 
-The MCP Server runs locally via `stdio` transport. It enables AI agents to plan, compose skills, and interact with the Monad blockchain deterministically.
+The MCP Server runs locally via `stdio` transport. It enables Automated nodes to plan, compose skills, and interact with the Monad blockchain deterministically.
 
 ```
 ┌────────────────┐          ┌───────────────────┐          ┌──────────────┐
-│  AI Assistant  │ ◄──────► │ MonadForge AI MCP │ ◄──────► │  Monad EVM   │
+│  Automated Assistant  │ ◄──────► │ MonadForge MCP │ ◄──────► │  Monad EVM   │
 │ (Cursor/Claude)│  stdio   │      Server       │   JSON   │ Testnet/Local│
 └────────────────┘          └───────────────────┘          └──────────────┘
 ```
@@ -39,7 +39,7 @@ The MCP entrypoint will be compiled to `mcp/dist/index.js`.
 
 ## Configuration
 
-To run the MCP server, you need to configure the required environment variables. You can specify these in a local `.env` file or pass them in the configuration settings of your AI client.
+To run the MCP server, you need to configure the required environment variables. You can specify these in a local `.env` file or pass them in the configuration settings of your Automated client.
 
 ### Required Environment Variables
 
@@ -53,16 +53,16 @@ To run the MCP server, you need to configure the required environment variables.
 
 ## Client Integrations
 
-Below are copy-paste configuration files for popular AI environments.
+Below are copy-paste configuration files for popular Automated environments.
 
 ### 1. Cursor Integration
 
-To add the MonadForge AI MCP server to **Cursor**:
+To add the MonadForge MCP server to **Cursor**:
 
 1. Go to **Cursor Settings** (Preferences) -> **Features** -> **MCP**.
 2. Click **+ Add New MCP Server**.
 3. Fill in the modal:
-   - **Name**: `MonadForge AI`
+   - **Name**: `MonadForge`
    - **Type**: `command`
    - **Command**:
      ```bash
@@ -121,10 +121,10 @@ To add the server to **Windsurf**, edit your `~/.codeium/windsurf/mcp_config.jso
 
 ## Exposed MCP Tools
 
-The server registers exactly 9 public developer-facing tools for agent consumption:
+The server registers exactly 9 public developer-facing tools for node consumption:
 
-1. **`create_project`**: Initialize a new MonadForge AI project structure.
-2. **`generate_contract`**: Generate smart contracts using AI matching specified parameters (e.g. token, nft, staking, dao).
+1. **`create_project`**: Initialize a new MonadForge project structure.
+2. **`generate_contract`**: Generate smart contracts using Automated matching specified parameters (e.g. token, nft, staking, dao).
 3. **`compose_application`**: Compose a multi-skill software system workflow.
 4. **`audit_project`**: Scan smart contracts in the project directory for vulnerabilities.
 5. **`repair_project`**: Invoke the self-healing repair loop on failing components or contracts.

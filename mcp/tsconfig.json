@@ -8,9 +8,9 @@
   "references": [
     { "path": "../sdk" },
     { "path": "../runtime" },
-    { "path": "../agent-runtime" },
+    { "path": "../node-runtime" },
     { "path": "../review" },
-    { "path": "../agent" },
+    { "path": "../node" },
     { "path": "../monadforge" }
   ]
 }

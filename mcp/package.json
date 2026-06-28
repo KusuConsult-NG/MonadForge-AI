@@ -13,10 +13,10 @@
     "@modelcontextprotocol/sdk": "^1.0.1",
     "@monadforge/sdk": "*",
     "@monadforge/runtime": "*",
-    "@monadforge/agent-runtime": "*",
+    "@monadforge/node-runtime": "*",
     "@monadforge/review": "*",
-    "@monadforge/ai": "*",
-    "@monadforge/agent": "*",
+    "@monadforge/automated": "*",
+    "@monadforge/node": "*",
     "ethers": "^6.11.1"
   },
   "devDependencies": {

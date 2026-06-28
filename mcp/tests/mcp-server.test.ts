@@ -18,7 +18,7 @@ jest.mock("@monadforge/memory", () => {
 });
 
 // Mock the unified SDK
-jest.mock("@monadforge/ai", () => {
+jest.mock("@monadforge/automated", () => {
   return {
     monadforge: {
       tools: {
@@ -494,13 +494,13 @@ describe("MCP Server Unit Tests", () => {
       });
       expect(response.isError).toBeUndefined();
       const content = JSON.parse(response.content[0].text);
-      expect(content["monadforge-ai"]).toBeDefined();
+      expect(content["monadforge-node"]).toBeDefined();
     });
 
     it("should handle invoke_agent for remote mock simulation", async () => {
-      const { AgentRouter } = require("@monadforge/agent");
-      AgentRouter.registerAgent("some-other-agent", {
-        agentId: "some-other-agent",
+      const { NodeRouter } = require("@monadforge/node");
+      NodeRouter.registerAgent("some-other-node", {
+        agentId: "some-other-node",
         pricing: {
           search_docs: { price: "0.0", token: "MON" },
         },
@@ -510,7 +510,7 @@ describe("MCP Server Unit Tests", () => {
         params: {
           name: "invoke_agent",
           arguments: {
-            targetAgentId: "some-other-agent",
+            targetAgentId: "some-other-node",
             skillName: "search_docs",
             params: { query: "parallel evm" },
           },
@@ -519,7 +519,7 @@ describe("MCP Server Unit Tests", () => {
       expect(response.isError).toBeUndefined();
       const content = JSON.parse(response.content[0].text);
       expect(content.status).toBe("success");
-      expect(content.output.agentId).toBe("some-other-agent");
+      expect(content.output.agentId).toBe("some-other-node");
     });
 
     it("should handle execute_skill for free local skill", async () => {
