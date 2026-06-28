@@ -572,6 +572,31 @@ describe("Node Package Unit Tests", () => {
       delete process.env.MONAD_RPC_URLS;
     });
 
+    it("should evict oldest cache entries (FIFO) if cache size exceeds 10000", async () => {
+      const set = adapter["verifiedTxHashes"];
+      set.clear();
+      for (let i = 0; i < 10000; i++) {
+        set.add(`0xhash${i}`);
+      }
+      expect(set.size).toBe(10000);
+
+      const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        value: ethers.parseEther("1.0"),
+      });
+      mockProvider.getTransactionReceipt.mockResolvedValue({
+        status: 1,
+      });
+
+      const newHash = "0xdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef";
+      await adapter.verifyPayment(chargeId, newHash);
+
+      expect(set.size).toBe(10000);
+      expect(set.has("0xhash0")).toBe(false);
+      expect(set.has(newHash)).toBe(true);
+    });
+
     it("should verify ERC-20 payment successfully via unindexed logs fallback", async () => {
       const tokenAddress = "0x1234567890123456789012345678901234567890";
       const chargeId = await adapter.createCharge(

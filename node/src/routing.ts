@@ -17,7 +17,9 @@ export class FileStore {
       if (!fs.existsSync(dirPath)) {
         await fs.promises.mkdir(dirPath, { recursive: true });
       }
-      await fs.promises.writeFile(filePath, content, "utf-8");
+      const tmpPath = `${filePath}.tmp`;
+      await fs.promises.writeFile(tmpPath, content, "utf-8");
+      await fs.promises.rename(tmpPath, filePath);
     }).catch(() => {});
     this.writeLocks.set(filePath, nextLock);
     return nextLock;

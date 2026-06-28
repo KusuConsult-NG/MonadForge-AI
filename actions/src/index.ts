@@ -910,7 +910,16 @@ export class ActionLayer {
         return sentTx;
       });
 
-      const receipt = await tx.wait();
+      let timer: any;
+      const timeoutPromise = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Transaction confirmation timed out")), 60000);
+      });
+      let receipt: any;
+      try {
+        receipt = await Promise.race([tx.wait(), timeoutPromise]);
+      } finally {
+        clearTimeout(timer);
+      }
       return {
         status: "success",
         action: "call",
@@ -1219,7 +1228,15 @@ export class ActionLayer {
         return sentTx;
       });
 
-      await tx.wait();
+      let timer: any;
+      const timeoutPromise = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Transaction confirmation timed out")), 60000);
+      });
+      try {
+        await Promise.race([tx.wait(), timeoutPromise]);
+      } finally {
+        clearTimeout(timer);
+      }
       return {
         status: "success",
         action: "transfer",

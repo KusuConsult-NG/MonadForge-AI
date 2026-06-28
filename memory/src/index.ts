@@ -92,6 +92,30 @@ export class MemoryEngine {
     );
     await fs.promises.writeFile(tracePath, JSON.stringify(trace, null, 2), "utf8");
     logger.info(`Execution trace written to ${tracePath}`);
+
+    try {
+      const files = await fs.promises.readdir(traceDir);
+      if (files.length > 100) {
+        const filePaths = files.map((f) => ({
+          name: f,
+          path: path.join(traceDir, f),
+          time: 0,
+        }));
+        for (const f of filePaths) {
+          try {
+            const stat = await fs.promises.stat(f.path);
+            f.time = stat.mtimeMs;
+          } catch {}
+        }
+        filePaths.sort((a, b) => a.time - b.time);
+        const toDelete = filePaths.slice(0, filePaths.length - 100);
+        for (const f of toDelete) {
+          await fs.promises.unlink(f.path).catch(() => {});
+        }
+      }
+    } catch (e: any) {
+      logger.warn(`Failed to rotate execution traces: ${e.message}`);
+    }
   }
 
   public async updateProjectContext(

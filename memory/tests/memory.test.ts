@@ -275,4 +275,39 @@ describe("MemoryEngine Unit Tests", () => {
       engine.saveExecutionTrace("test-project-123", invalidTrace),
     ).rejects.toThrow();
   });
+
+  it("should rotate trace files if trace count exceeds 100", async () => {
+    const traceDir = path.resolve(process.cwd(), ".monadforge", "traces");
+    await fs.promises.mkdir(traceDir, { recursive: true });
+
+    // Clean it up first
+    const existing = await fs.promises.readdir(traceDir);
+    for (const file of existing) {
+      await fs.promises.unlink(path.join(traceDir, file)).catch(() => {});
+    }
+
+    // Write 102 trace files with different timestamps
+    for (let i = 0; i < 102; i++) {
+      const mockTrace = {
+        traceId: `tr_test_${i}`,
+        projectId: `rotation-proj-${i}`,
+        timestamp: new Date(Date.now() + i * 1000).toISOString(),
+        intent: { type: "generate", domain: "erc20", params: {} },
+        plan: { steps: [] },
+        stepsExecuted: [],
+        repairs: [],
+        deployments: [],
+        finalStatus: "success",
+      };
+      await engine.saveExecutionTrace(`rotation-proj-${i}`, mockTrace);
+    }
+
+    const files = await fs.promises.readdir(traceDir);
+    expect(files.length).toBe(100);
+
+    // Clean up
+    for (const file of files) {
+      await fs.promises.unlink(path.join(traceDir, file)).catch(() => {});
+    }
+  });
 });

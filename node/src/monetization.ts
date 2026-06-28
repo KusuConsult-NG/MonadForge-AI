@@ -124,6 +124,17 @@ export class EthersPaymentAdapter implements PaymentAdapter {
     return this.provider;
   }
 
+  private addVerifiedTx(txHash: string): void {
+    const key = txHash.toLowerCase();
+    this.verifiedTxHashes.add(key);
+    if (this.verifiedTxHashes.size > 10000) {
+      const first = this.verifiedTxHashes.values().next().value;
+      if (first !== undefined) {
+        this.verifiedTxHashes.delete(first);
+      }
+    }
+  }
+
   private getReceiverAddress(): string {
     const config = getConfig();
     if (process.env.PAYMENT_RECEIVER_ADDRESS) {
@@ -292,7 +303,7 @@ export class EthersPaymentAdapter implements PaymentAdapter {
 
       charge.txHash = txHash;
       charge.status = "paid";
-      this.verifiedTxHashes.add(txHash.toLowerCase());
+      this.addVerifiedTx(txHash);
       logger.info(
         `Ethers payment verified for charge ${chargeId} via tx ${txHash}`,
       );
@@ -327,7 +338,7 @@ export class EthersPaymentAdapter implements PaymentAdapter {
             ) {
               charge.txHash = txHash;
               charge.status = "paid";
-              this.verifiedTxHashes.add(txHash.toLowerCase());
+              this.addVerifiedTx(txHash);
               logger.info(
                 `Ethers payment verified via fallback RPC for charge ${chargeId}`,
               );
@@ -355,7 +366,7 @@ export class EthersPaymentAdapter implements PaymentAdapter {
             if (foundValidLog) {
               charge.txHash = txHash;
               charge.status = "paid";
-              this.verifiedTxHashes.add(txHash.toLowerCase());
+              this.addVerifiedTx(txHash);
               logger.info(
                 `Ethers payment verified via fallback RPC for charge ${chargeId}`,
               );
