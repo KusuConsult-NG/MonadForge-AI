@@ -2,6 +2,9 @@ import { createLogger, getConfig } from "@monadforge/sdk";
 import { MonetizedExecutor, PaymentDetails } from "./monetization";
 import { AgentIdentity } from "./manifest";
 import { ethers } from "ethers";
+import * as fs from "fs";
+import * as path from "path";
+
 
 
 const logger = createLogger("Routing");
@@ -9,10 +12,55 @@ const logger = createLogger("Routing");
 export class AgentRouter {
   private static localRegistry = new Map<string, any>();
   private static localExecutor = new MonetizedExecutor();
+  private static registryLoaded = false;
+
+  private static getPeersFilePath(): string {
+    return path.resolve(process.cwd(), ".monadforge", "peers.json");
+  }
+
+  private static ensureRegistryLoaded(): void {
+    if (this.registryLoaded) {
+      return;
+    }
+    this.registryLoaded = true;
+    try {
+      const filePath = this.getPeersFilePath();
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, "utf-8");
+        const data = JSON.parse(content);
+        for (const [agentId, manifest] of Object.entries(data)) {
+          this.localRegistry.set(agentId, manifest);
+        }
+        logger.info(`Loaded ${Object.keys(data).length} peer agent manifests from persistent storage.`);
+      }
+    } catch (err: any) {
+      logger.error("Failed to load peer agents from persistent file", err);
+    }
+  }
+
+  private static persistRegistry(): void {
+    try {
+      const filePath = this.getPeersFilePath();
+      const dirPath = path.dirname(filePath);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+      const data: Record<string, any> = {};
+      for (const [id, manifest] of this.localRegistry.entries()) {
+        data[id] = manifest;
+      }
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+      logger.info(`Persisted ${this.localRegistry.size} peer agent manifests to ${filePath}.`);
+    } catch (err: any) {
+      logger.error("Failed to persist peer agents to file", err);
+    }
+  }
 
   public static registerAgent(agentId: string, manifest: any): void {
+    this.ensureRegistryLoaded();
     this.localRegistry.set(agentId, manifest);
     logger.info(`Registered agent '${agentId}' in router database.`);
+    this.persistRegistry();
   }
 
   public static async invokeAgent(
@@ -22,6 +70,7 @@ export class AgentRouter {
     paymentDetails?: PaymentDetails,
     context?: any
   ): Promise<any> {
+    this.ensureRegistryLoaded();
     logger.info(`Routing request to agent '${targetAgentId}' for skill '${skillName}'`);
 
     if (targetAgentId === "monadforge-ai" || targetAgentId === "monadforge") {
@@ -105,9 +154,19 @@ export class AgentRouter {
 
   public static clearRegistry(): void {
     this.localRegistry.clear();
+    this.registryLoaded = false;
+    try {
+      const filePath = this.getPeersFilePath();
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (err: any) {
+      logger.error("Failed to delete peers file during clearRegistry", err);
+    }
   }
 
   public static getRegisteredAgents(): Record<string, any> {
+    this.ensureRegistryLoaded();
     const agents: Record<string, any> = {
       "monadforge-ai": AgentIdentity.getManifest()
     };

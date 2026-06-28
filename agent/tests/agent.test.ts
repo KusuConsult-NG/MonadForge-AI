@@ -1,5 +1,8 @@
 import { AgentIdentity, MockPaymentAdapter, MonetizedExecutor, AgentRouter, AgentMarketplace, EthersPaymentAdapter } from "../src/index";
 import { ethers } from "ethers";
+import * as fs from "fs";
+import * as path from "path";
+
 
 jest.mock("@monadforge/sdk", () => {
   const actualSdk = jest.requireActual("@monadforge/sdk");
@@ -98,6 +101,49 @@ describe("Agent Package Unit Tests", () => {
       await expect(
         AgentRouter.invokeAgent("remote-agent", "run_audit", { code: "contract X {}" })
       ).rejects.toThrow("requires payment");
+    });
+
+    it("should write registrations to the file system", () => {
+      AgentRouter.clearRegistry();
+      const mockPeerManifest = {
+        agentId: "temp-persisted-agent",
+        name: "Temp Node",
+        pricing: {}
+      };
+      AgentRouter.registerAgent("temp-persisted-agent", mockPeerManifest);
+
+      const peersFilePath = path.resolve(process.cwd(), ".monadforge", "peers.json");
+      expect(fs.existsSync(peersFilePath)).toBe(true);
+      const content = fs.readFileSync(peersFilePath, "utf-8");
+      const data = JSON.parse(content);
+      expect(data["temp-persisted-agent"]).toBeDefined();
+      expect(data["temp-persisted-agent"].name).toBe("Temp Node");
+
+      AgentRouter.clearRegistry();
+    });
+
+    it("should reload registered agents from file system on initialization", () => {
+      AgentRouter.clearRegistry();
+
+      const peersFilePath = path.resolve(process.cwd(), ".monadforge", "peers.json");
+      const dirPath = path.dirname(peersFilePath);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+      const mockPeerManifest = {
+        agentId: "offline-persisted-agent",
+        name: "Offline Persisted Node",
+        pricing: {}
+      };
+      fs.writeFileSync(peersFilePath, JSON.stringify({
+        "offline-persisted-agent": mockPeerManifest
+      }), "utf-8");
+
+      const registered = AgentRouter.getRegisteredAgents();
+      expect(registered["offline-persisted-agent"]).toBeDefined();
+      expect(registered["offline-persisted-agent"].name).toBe("Offline Persisted Node");
+
+      AgentRouter.clearRegistry();
     });
   });
 
