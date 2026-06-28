@@ -7,6 +7,27 @@ import * as path from "path";
 
 const logger = createLogger("Routing");
 
+export class FileStore {
+  private static writeLocks = new Map<string, Promise<void>>();
+
+  public static async writeSafe(filePath: string, content: string): Promise<void> {
+    const currentLock = this.writeLocks.get(filePath) || Promise.resolve();
+    const nextLock = currentLock.then(async () => {
+      const dirPath = path.dirname(filePath);
+      if (!fs.existsSync(dirPath)) {
+        await fs.promises.mkdir(dirPath, { recursive: true });
+      }
+      await fs.promises.writeFile(filePath, content, "utf-8");
+    }).catch(() => {});
+    this.writeLocks.set(filePath, nextLock);
+    return nextLock;
+  }
+
+  public static async waitForLock(filePath: string): Promise<void> {
+    await this.writeLocks.get(filePath);
+  }
+}
+
 export class NodeRouter {
   private static localRegistry = new Map<string, any>();
   private static localExecutor = new MonetizedExecutor();
@@ -39,23 +60,20 @@ export class NodeRouter {
   }
 
   private static persistRegistry(): void {
-    try {
-      const filePath = this.getPeersFilePath();
-      const dirPath = path.dirname(filePath);
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-      }
-      const data: Record<string, any> = {};
-      for (const [id, manifest] of this.localRegistry.entries()) {
-        data[id] = manifest;
-      }
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
-      logger.info(
-        `Persisted ${this.localRegistry.size} peer node manifests to ${filePath}.`,
-      );
-    } catch (err: any) {
-      logger.error("Failed to persist peer nodes to file", err);
+    const filePath = this.getPeersFilePath();
+    const data: Record<string, any> = {};
+    for (const [id, manifest] of this.localRegistry.entries()) {
+      data[id] = manifest;
     }
+    FileStore.writeSafe(filePath, JSON.stringify(data, null, 2))
+      .then(() => {
+        logger.info(
+          `Persisted ${this.localRegistry.size} peer node manifests to ${filePath}.`,
+        );
+      })
+      .catch((err: any) => {
+        logger.error("Failed to persist peer nodes to file", err);
+      });
   }
 
   public static registerAgent(agentId: string, manifest: any): void {

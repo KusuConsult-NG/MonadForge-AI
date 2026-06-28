@@ -690,6 +690,58 @@ describe("DeploymentEngine Unit Tests", () => {
       resetConfigForTesting();
     });
 
+    it("should rotate candidate RPCs in getWorkingProvider when MONAD_RPC_URLS is set", async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalKey = process.env.DEPLOYER_PRIVATE_KEY;
+      process.env.NODE_ENV = "production";
+      process.env.DEPLOYER_PRIVATE_KEY =
+        "0x1234567890123456789012345678901234567890123456789012345678901234";
+      process.env.MONAD_RPC_URLS = "https://unreachable.rpc.com, https://working.rpc.com";
+
+      const { resetConfigForTesting } = require("@monadforge/sdk");
+      resetConfigForTesting();
+
+      const urlsCalled: string[] = [];
+      const providerSpy = jest
+        .spyOn(ethers, "JsonRpcProvider")
+        .mockImplementation((url) => {
+          urlsCalled.push(String(url));
+          if (url === "https://unreachable.rpc.com") {
+            throw new Error("RPC unreachable");
+          }
+          return {
+            getBlockNumber: jest.fn().mockResolvedValue(1),
+            getBalance: jest.fn().mockResolvedValue(0n),
+          } as any;
+        });
+
+      const compileResult: any = {
+        status: "success",
+        action: "compile",
+        metadata: { success: true, abi: [], bytecode: "0x6060" },
+      };
+
+      try {
+        await engine.deployToTestnet(
+          compileResult,
+          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        );
+      } catch {}
+
+      expect(urlsCalled).toContain("https://unreachable.rpc.com");
+      expect(urlsCalled).toContain("https://working.rpc.com");
+
+      providerSpy.mockRestore();
+      process.env.NODE_ENV = originalEnv;
+      if (originalKey) {
+        process.env.DEPLOYER_PRIVATE_KEY = originalKey;
+      } else {
+        delete process.env.DEPLOYER_PRIVATE_KEY;
+      }
+      delete process.env.MONAD_RPC_URLS;
+      resetConfigForTesting();
+    });
+
     it("should call live API to verify deployment successfully in non-mock mode", async () => {
       const originalEnv = process.env.NODE_ENV;
       const originalKey = process.env.DEPLOYER_PRIVATE_KEY;

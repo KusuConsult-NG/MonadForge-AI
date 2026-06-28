@@ -119,26 +119,29 @@ export class MonadJsonRpcProvider extends ethers.JsonRpcProvider {
 async function getWorkingProvider(
   config: ReturnType<typeof getConfig>,
 ): Promise<ethers.JsonRpcProvider> {
-  const primary = injectCustomGasEstimator(
+  const envUrls = process.env.MONAD_RPC_URLS;
+  const urls = envUrls
+    ? envUrls.split(",").map((u) => u.trim()).filter(Boolean)
+    : [config.MONAD_RPC_URL, config.MONAD_RPC_URL_FALLBACK];
+
+  for (const url of urls) {
+    try {
+      const provider = injectCustomGasEstimator(
+        new ethers.JsonRpcProvider(url),
+      );
+      if (typeof provider.getBlockNumber === "function") {
+        await provider.getBlockNumber();
+      }
+      return provider;
+    } catch {
+      logger.warn(`RPC endpoint ${url} unreachable, trying next candidate...`);
+    }
+  }
+
+  // Fallback to primary if all failed
+  return injectCustomGasEstimator(
     new ethers.JsonRpcProvider(config.MONAD_RPC_URL),
   );
-  try {
-    if (typeof primary.getBlockNumber === "function") {
-      await primary.getBlockNumber();
-    }
-    return primary;
-  } catch {
-    logger.warn(
-      `Primary RPC ${config.MONAD_RPC_URL} unreachable, switching to fallback`,
-    );
-    const fallback = injectCustomGasEstimator(
-      new ethers.JsonRpcProvider(config.MONAD_RPC_URL_FALLBACK),
-    );
-    if (typeof fallback.getBlockNumber === "function") {
-      await fallback.getBlockNumber(); // throws if fallback is also down
-    }
-    return fallback;
-  }
 }
 
 export class DeploymentEngine implements IDeploymentEngine {
@@ -889,38 +892,39 @@ export class ActionLayer {
           data: result,
         },
       };
-    } else {
-      return TransactionQueue.enqueue(privateKey, async () => {
-        let tx;
+    }
+      const tx = await TransactionQueue.enqueue(privateKey, async () => {
+        let sentTx;
         try {
-          tx = await contract[functionName](...args);
+          sentTx = await contract[functionName](...args);
         } catch (err: any) {
           const errStr = String(err).toLowerCase();
           if (errStr.includes("nonce") || errStr.includes("underpriced")) {
             logger.warn("Nonce collision detected during write execution. Resetting nonce and retrying once...");
             wallet.reset();
-            tx = await contract[functionName](...args);
+            sentTx = await contract[functionName](...args);
           } else {
             throw err;
           }
         }
-        const receipt = await tx.wait();
-        return {
-          status: "success",
-          action: "call",
-          txHash: tx.hash,
-          stateChange: {
-            contract: contractAddress,
-            method: functionName,
-            arguments: args,
-          },
-          metadata: {
-            success: true,
-            gasUsed: receipt ? receipt.gasUsed.toString() : "0",
-          },
-        };
+        return sentTx;
       });
-    }
+
+      const receipt = await tx.wait();
+      return {
+        status: "success",
+        action: "call",
+        txHash: tx.hash,
+        stateChange: {
+          contract: contractAddress,
+          method: functionName,
+          arguments: args,
+        },
+        metadata: {
+          success: true,
+          gasUsed: receipt ? receipt.gasUsed.toString() : "0",
+        },
+      };
   }
 
   public async mint(
@@ -1191,11 +1195,11 @@ export class ActionLayer {
           transactionHash: res.txHash || "",
         },
       };
-    } else {
-      return TransactionQueue.enqueue(privateKey, async () => {
-        let tx;
+    }
+      const tx = await TransactionQueue.enqueue(privateKey, async () => {
+        let sentTx;
         try {
-          tx = await wallet.sendTransaction({
+          sentTx = await wallet.sendTransaction({
             to,
             value: amount,
           });
@@ -1204,7 +1208,7 @@ export class ActionLayer {
           if (errStr.includes("nonce") || errStr.includes("underpriced")) {
             logger.warn("Nonce collision detected during native transfer. Resetting nonce and retrying once...");
             wallet.reset();
-            tx = await wallet.sendTransaction({
+            sentTx = await wallet.sendTransaction({
               to,
               value: amount,
             });
@@ -1212,22 +1216,23 @@ export class ActionLayer {
             throw err;
           }
         }
-        await tx.wait();
-        return {
-          status: "success",
-          action: "transfer",
-          txHash: tx.hash,
-          stateChange: {
-            to,
-            amount,
-          },
-          metadata: {
-            success: true,
-            transactionHash: tx.hash,
-          },
-        };
+        return sentTx;
       });
-    }
+
+      await tx.wait();
+      return {
+        status: "success",
+        action: "transfer",
+        txHash: tx.hash,
+        stateChange: {
+          to,
+          amount,
+        },
+        metadata: {
+          success: true,
+          transactionHash: tx.hash,
+        },
+      };
   }
 
   public async verifyDeployment(

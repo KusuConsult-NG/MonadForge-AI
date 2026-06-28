@@ -6,6 +6,7 @@ import {
   NodeMarketplace,
   EthersPaymentAdapter,
   calculateDynamicPrice,
+  FileStore,
 } from "../src/index";
 import { ethers } from "ethers";
 import * as fs from "fs";
@@ -134,7 +135,7 @@ describe("Node Package Unit Tests", () => {
       ).rejects.toThrow("requires payment");
     });
 
-    it("should write registrations to the file system", () => {
+    it("should write registrations to the file system", async () => {
       NodeRouter.clearRegistry();
       const mockPeerManifest = {
         agentId: "temp-persisted-node",
@@ -148,6 +149,7 @@ describe("Node Package Unit Tests", () => {
         ".monadforge",
         "peers.json",
       );
+      await FileStore.waitForLock(peersFilePath);
       expect(fs.existsSync(peersFilePath)).toBe(true);
       const content = fs.readFileSync(peersFilePath, "utf-8");
       const data = JSON.parse(content);
@@ -520,6 +522,56 @@ describe("Node Package Unit Tests", () => {
       connectSpy.mockRestore();
     });
 
+    it("should bypass RPC verification and use local replay cache for already verified hashes", async () => {
+      const chargeId1 = await adapter.createCharge("run_audit", "1.0", "MON");
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        value: ethers.parseEther("1.0"),
+      });
+      mockProvider.getTransactionReceipt.mockResolvedValue({
+        status: 1,
+      });
+
+      const hash = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+      const result1 = await adapter.verifyPayment(chargeId1, hash);
+      expect(result1).toBe(true);
+      expect(mockProvider.getTransaction).toHaveBeenCalledTimes(1);
+
+      mockProvider.getTransaction.mockClear();
+      const chargeId2 = await adapter.createCharge("run_audit", "1.0", "MON");
+      const result2 = await adapter.verifyPayment(chargeId2, hash);
+      expect(result2).toBe(true);
+      expect(mockProvider.getTransaction).not.toHaveBeenCalled();
+    });
+
+    it("should rotate candidate RPC endpoints when MONAD_RPC_URLS is set", async () => {
+      process.env.MONAD_RPC_URLS = "https://rpc1.monad.xyz,https://rpc2.monad.xyz";
+      const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
+      
+      const connectSpy = jest
+        .spyOn(ethers, "JsonRpcProvider")
+        .mockImplementation((url) => {
+          expect(url).toBe("https://rpc1.monad.xyz");
+          return mockProvider;
+        });
+
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        value: ethers.parseEther("1.0"),
+      });
+      mockProvider.getTransactionReceipt.mockResolvedValue({
+        status: 1,
+      });
+
+      const result = await adapter.verifyPayment(
+        chargeId,
+        "0xdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef"
+      );
+      expect(result).toBe(true);
+      connectSpy.mockRestore();
+      delete process.env.MONAD_RPC_URLS;
+    });
+
     it("should verify ERC-20 payment successfully via unindexed logs fallback", async () => {
       const tokenAddress = "0x1234567890123456789012345678901234567890";
       const chargeId = await adapter.createCharge(
@@ -736,6 +788,9 @@ describe("Node Package Unit Tests", () => {
         .mockImplementation(() => {
           return {
             getTransaction: jest
+              .fn()
+              .mockRejectedValue(new Error("Fallback RPC Timeout")),
+            getTransactionReceipt: jest
               .fn()
               .mockRejectedValue(new Error("Fallback RPC Timeout")),
           } as any;
@@ -1243,6 +1298,74 @@ describe("Node Package Unit Tests", () => {
         expect(callArgs.to).toBe("0xSenderAddress");
         const expectedRefund = ethers.parseEther("1.0") - (ethers.parseUnits("50", "gwei") * 21000n);
         expect(callArgs.value).toBe(expectedRefund);
+      } finally {
+        ethers.Wallet.prototype.sendTransaction = originalSend;
+      }
+    });
+
+    it("should throw error if cancelling non-existent charge in MockPaymentAdapter", async () => {
+      const mockAdapter = new MockPaymentAdapter();
+      await expect(mockAdapter.cancelCharge("non-existent")).rejects.toThrow("Charge not found");
+    });
+
+    it("should skip refund if original charge value is less than the gas fee", async () => {
+      const mockWalletSend = jest.fn();
+      const originalSend = ethers.Wallet.prototype.sendTransaction;
+      ethers.Wallet.prototype.sendTransaction = mockWalletSend;
+
+      try {
+        const provider = new ethers.JsonRpcProvider("http://localhost:8545");
+        jest.spyOn(provider, "getTransaction").mockResolvedValue({
+          from: "0xSenderAddress",
+          to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+          value: ethers.parseEther("0.0001")
+        } as any);
+        jest.spyOn(provider, "getTransactionReceipt").mockResolvedValue({
+          status: 1,
+          logs: []
+        } as any);
+        jest.spyOn(provider, "getFeeData").mockResolvedValue({
+          gasPrice: ethers.parseUnits("50", "gwei")
+        } as any);
+
+        const refundAdapter = new EthersPaymentAdapter(provider);
+        const chargeId = await refundAdapter.createCharge("run_audit", "0.0001", "MON");
+        const verified = await refundAdapter.verifyPayment(chargeId, "0xLowValueTransactionHash");
+        expect(verified).toBe(true);
+        await refundAdapter.cancelCharge(chargeId);
+
+        expect(mockWalletSend).not.toHaveBeenCalled();
+      } finally {
+        ethers.Wallet.prototype.sendTransaction = originalSend;
+      }
+    });
+
+    it("should catch and log error if refund sendTransaction throws an error", async () => {
+      const mockWalletSend = jest.fn().mockRejectedValue(new Error("Network connection lost"));
+      const originalSend = ethers.Wallet.prototype.sendTransaction;
+      ethers.Wallet.prototype.sendTransaction = mockWalletSend;
+
+      try {
+        const provider = new ethers.JsonRpcProvider("http://localhost:8545");
+        jest.spyOn(provider, "getTransaction").mockResolvedValue({
+          from: "0xSenderAddress",
+          to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+          value: ethers.parseEther("1.0")
+        } as any);
+        jest.spyOn(provider, "getTransactionReceipt").mockResolvedValue({
+          status: 1,
+          logs: []
+        } as any);
+        jest.spyOn(provider, "getFeeData").mockResolvedValue({
+          gasPrice: ethers.parseUnits("50", "gwei")
+        } as any);
+
+        const refundAdapter = new EthersPaymentAdapter(provider);
+        const chargeId = await refundAdapter.createCharge("run_audit", "1.0", "MON");
+        const verified = await refundAdapter.verifyPayment(chargeId, "0xErrorRefundTransactionHash");
+        expect(verified).toBe(true);
+        
+        await expect(refundAdapter.cancelCharge(chargeId)).resolves.not.toThrow();
       } finally {
         ethers.Wallet.prototype.sendTransaction = originalSend;
       }

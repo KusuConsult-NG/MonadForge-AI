@@ -102,6 +102,7 @@ export class EthersPaymentAdapter implements PaymentAdapter {
     }
   >();
   private provider: ethers.JsonRpcProvider | null = null;
+  private verifiedTxHashes = new Set<string>();
 
   constructor(provider?: ethers.JsonRpcProvider) {
     if (provider) {
@@ -114,7 +115,12 @@ export class EthersPaymentAdapter implements PaymentAdapter {
       return this.provider;
     }
     const config = getConfig();
-    this.provider = new ethers.JsonRpcProvider(config.MONAD_RPC_URL);
+    const envUrls = process.env.MONAD_RPC_URLS;
+    const urls = envUrls
+      ? envUrls.split(",").map((u) => u.trim()).filter(Boolean)
+      : [config.MONAD_RPC_URL, config.MONAD_RPC_URL_FALLBACK];
+
+    this.provider = new ethers.JsonRpcProvider(urls[0]);
     return this.provider;
   }
 
@@ -223,10 +229,19 @@ export class EthersPaymentAdapter implements PaymentAdapter {
       return true;
     }
 
+    if (this.verifiedTxHashes.has(txHash.toLowerCase())) {
+      charge.txHash = txHash;
+      charge.status = "paid";
+      logger.info(`Verified payment for charge ${chargeId} via local replay cache`);
+      return true;
+    }
+
     try {
       const provider = this.getProvider();
-      const tx = await provider.getTransaction(txHash);
-      const receipt = await provider.getTransactionReceipt(txHash);
+      const [tx, receipt] = await Promise.all([
+        provider.getTransaction(txHash),
+        provider.getTransactionReceipt(txHash),
+      ]);
 
       if (!tx || !receipt || receipt.status !== 1) {
         logger.warn(`Transaction not found, failed, or pending on-chain`);
@@ -277,6 +292,7 @@ export class EthersPaymentAdapter implements PaymentAdapter {
 
       charge.txHash = txHash;
       charge.status = "paid";
+      this.verifiedTxHashes.add(txHash.toLowerCase());
       logger.info(
         `Ethers payment verified for charge ${chargeId} via tx ${txHash}`,
       );
@@ -288,11 +304,17 @@ export class EthersPaymentAdapter implements PaymentAdapter {
       );
       try {
         const config = getConfig();
-        const fallbackProvider = new ethers.JsonRpcProvider(
-          config.MONAD_RPC_URL_FALLBACK,
-        );
-        const tx = await fallbackProvider.getTransaction(txHash);
-        const receipt = await fallbackProvider.getTransactionReceipt(txHash);
+        const envUrls = process.env.MONAD_RPC_URLS;
+        const urls = envUrls
+          ? envUrls.split(",").map((u) => u.trim()).filter(Boolean)
+          : [config.MONAD_RPC_URL_FALLBACK];
+        const fallbackUrl = urls[1] || config.MONAD_RPC_URL_FALLBACK;
+        const fallbackProvider = new ethers.JsonRpcProvider(fallbackUrl);
+
+        const [tx, receipt] = await Promise.all([
+          fallbackProvider.getTransaction(txHash),
+          fallbackProvider.getTransactionReceipt(txHash),
+        ]);
         if (tx && receipt && receipt.status === 1) {
           const receiver = this.getReceiverAddress().toLowerCase();
           const expectedAmountWei = ethers.parseEther(charge.amount);
@@ -305,6 +327,7 @@ export class EthersPaymentAdapter implements PaymentAdapter {
             ) {
               charge.txHash = txHash;
               charge.status = "paid";
+              this.verifiedTxHashes.add(txHash.toLowerCase());
               logger.info(
                 `Ethers payment verified via fallback RPC for charge ${chargeId}`,
               );
@@ -332,6 +355,7 @@ export class EthersPaymentAdapter implements PaymentAdapter {
             if (foundValidLog) {
               charge.txHash = txHash;
               charge.status = "paid";
+              this.verifiedTxHashes.add(txHash.toLowerCase());
               logger.info(
                 `Ethers payment verified via fallback RPC for charge ${chargeId}`,
               );
