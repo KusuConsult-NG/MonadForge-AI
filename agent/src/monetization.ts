@@ -14,10 +14,11 @@ export interface PaymentAdapter {
   createCharge(skillName: string, amount: string, token: string): Promise<string>;
   verifyPayment(chargeId: string, txHash: string): Promise<boolean>;
   settleExecution(chargeId: string): Promise<void>;
+  cancelCharge?(chargeId: string): Promise<void>;
 }
 
 export class MockPaymentAdapter implements PaymentAdapter {
-  private charges = new Map<string, { skillName: string; amount: string; token: string; status: "pending" | "paid" | "settled" }>();
+  private charges = new Map<string, { skillName: string; amount: string; token: string; status: "pending" | "paid" | "settled" | "refunded" }>();
 
   public async createCharge(skillName: string, amount: string, token: string): Promise<string> {
     const chargeId = `ch_${Math.random().toString(36).substring(2, 15)}`;
@@ -52,13 +53,22 @@ export class MockPaymentAdapter implements PaymentAdapter {
     logger.info(`Settled payment for charge ${chargeId}`);
   }
 
+  public async cancelCharge(chargeId: string): Promise<void> {
+    const charge = this.charges.get(chargeId);
+    if (!charge) {
+      throw new Error(`Charge not found: ${chargeId}`);
+    }
+    charge.status = "refunded";
+    logger.info(`Cancelled and refunded mock payment for charge ${chargeId}`);
+  }
+
   public getChargeStatus(chargeId: string): string | undefined {
     return this.charges.get(chargeId)?.status;
   }
 }
 
 export class EthersPaymentAdapter implements PaymentAdapter {
-  private charges = new Map<string, { skillName: string; amount: string; token: string; status: "pending" | "paid" | "settled" }>();
+  private charges = new Map<string, { skillName: string; amount: string; token: string; status: "pending" | "paid" | "settled" | "refunded" }>();
   private provider: ethers.JsonRpcProvider | null = null;
 
   constructor(provider?: ethers.JsonRpcProvider) {
@@ -225,9 +235,73 @@ export class EthersPaymentAdapter implements PaymentAdapter {
     logger.info(`Settled Ethers payment for charge ${chargeId}`);
   }
 
+  public async cancelCharge(chargeId: string): Promise<void> {
+    const charge = this.charges.get(chargeId);
+    if (!charge) {
+      throw new Error(`Charge not found: ${chargeId}`);
+    }
+    charge.status = "refunded";
+    logger.info(`Cancelled and refunded Ethers payment for charge ${chargeId}`);
+  }
+
   public getChargeStatus(chargeId: string): string | undefined {
     return this.charges.get(chargeId)?.status;
   }
+}
+
+export interface WorkAttestation {
+  agentId: string;
+  skillName: string;
+  timestamp: number;
+  outputHash: string;
+  signature: string;
+}
+
+export function calculateDynamicPrice(skillName: string, params: Record<string, any>, basePrice: string): string {
+  const base = parseFloat(basePrice);
+  if (isNaN(base) || base === 0) return "0.0";
+  
+  let multiplier = 1.0;
+  
+  if (skillName === "generate_contract" || skillName === "run_audit") {
+    const code = params.code || params.sourceCode || "";
+    multiplier += Math.min(1.0, Math.floor(code.length / 1000) * 0.1);
+  }
+  
+  if (process.env.GAS_CONGESTION === "high") {
+    multiplier += 0.5;
+  }
+  
+  return (base * multiplier).toFixed(4);
+}
+
+export async function generateWorkAttestation(
+  agentId: string,
+  skillName: string,
+  output: any,
+  privateKey: string
+): Promise<WorkAttestation> {
+  const timestamp = Date.now();
+  const outputStr = typeof output === "string" ? output : JSON.stringify(output);
+  const outputHash = ethers.id(outputStr);
+
+  const payload = JSON.stringify({
+    agentId,
+    skillName,
+    timestamp,
+    outputHash
+  });
+
+  const wallet = new ethers.Wallet(privateKey);
+  const signature = await wallet.signMessage(payload);
+
+  return {
+    agentId,
+    skillName,
+    timestamp,
+    outputHash,
+    signature
+  };
 }
 
 export class MonetizedExecutor {
@@ -247,11 +321,18 @@ export class MonetizedExecutor {
     const manifest = AgentIdentity.getManifest();
     const priceInfo = manifest.pricing?.[skillName];
 
-    const requiresPayment = priceInfo && parseFloat(priceInfo.price) > 0;
+    let requiredPrice = "0.0";
+    let token = "MON";
+    if (priceInfo) {
+      token = priceInfo.token;
+      requiredPrice = calculateDynamicPrice(skillName, params, priceInfo.price);
+    }
+
+    const requiresPayment = parseFloat(requiredPrice) > 0;
 
     if (requiresPayment) {
       if (!paymentDetails) {
-        throw new Error(`Execution of skill '${skillName}' requires payment of ${priceInfo.price} ${priceInfo.token}. No payment details provided.`);
+        throw new Error(`Execution of skill '${skillName}' requires payment of ${requiredPrice} ${token}. No payment details provided.`);
       }
 
       const { chargeId, txHash } = paymentDetails;
@@ -260,9 +341,34 @@ export class MonetizedExecutor {
         throw new Error(`Payment verification failed for charge '${chargeId}'`);
       }
 
-      const result = await this.skills.route(skillName, params, context);
+      let result: any;
+      try {
+        result = await this.skills.route(skillName, params, context);
+        await this.paymentAdapter.settleExecution(chargeId);
+      } catch (err: any) {
+        if (this.paymentAdapter.cancelCharge) {
+          try {
+            await this.paymentAdapter.cancelCharge(chargeId);
+          } catch (cancelErr) {
+            logger.error("Failed to cancel charge during error handling", cancelErr);
+          }
+        }
+        throw err;
+      }
 
-      await this.paymentAdapter.settleExecution(chargeId);
+      try {
+        const config = getConfig();
+        let privateKey = config.DEPLOYER_PRIVATE_KEY;
+        if (!privateKey || privateKey === "0x0000000000000000000000000000000000000000000000000000000000000000") {
+          privateKey = "0x0123456789012345678901234567890123456789012345678901234567890123";
+        }
+        const attestation = await generateWorkAttestation(manifest.agentId, skillName, result, privateKey);
+        if (result && typeof result === "object" && !Array.isArray(result)) {
+          result.attestation = attestation;
+        }
+      } catch (attestErr) {
+        logger.error("Failed to generate work attestation", attestErr);
+      }
 
       return result;
     } else {

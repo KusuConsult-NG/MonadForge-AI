@@ -17,6 +17,34 @@ import solc from "solc";
 
 const logger = createLogger("DeploymentEngine");
 
+export class TransactionQueue {
+  private static queues = new Map<string, Promise<any>>();
+
+  public static async enqueue<T>(privateKey: string, fn: () => Promise<T>): Promise<T> {
+    if (!privateKey || privateKey.length < 64) {
+      return fn();
+    }
+    
+    let key: string;
+    try {
+      key = ethers.computeAddress(privateKey).toLowerCase();
+    } catch {
+      return fn();
+    }
+
+    const current = this.queues.get(key) || Promise.resolve();
+    
+    const next = current.then(async () => {
+      return fn();
+    }).catch(async () => {
+      return fn();
+    });
+
+    this.queues.set(key, next);
+    return next;
+  }
+}
+
 export function injectCustomGasEstimator(provider: ethers.JsonRpcProvider): ethers.JsonRpcProvider {
   provider.getFeeData = async function (this: ethers.JsonRpcProvider): Promise<ethers.FeeData> {
     try {
@@ -704,9 +732,11 @@ export class ActionLayer {
     compiledArtifact: PrimitiveOutput<CompilationResult>,
     deployerPrivateKey: string,
   ): Promise<PrimitiveOutput<DeploymentResult>> {
-    return this.deploymentEngine.deployToTestnet(
-      compiledArtifact,
-      deployerPrivateKey,
+    return TransactionQueue.enqueue(deployerPrivateKey, () =>
+      this.deploymentEngine.deployToTestnet(
+        compiledArtifact,
+        deployerPrivateKey,
+      )
     );
   }
 
@@ -716,11 +746,13 @@ export class ActionLayer {
     initializerArgs?: any[],
     initializerMethod?: string,
   ): Promise<PrimitiveOutput<DeploymentResult & { proxyAddress: string; implementationAddress: string }>> {
-    return this.deploymentEngine.deployUpgradeable(
-      implementationArtifact,
-      deployerPrivateKey,
-      initializerArgs,
-      initializerMethod,
+    return TransactionQueue.enqueue(deployerPrivateKey, () =>
+      this.deploymentEngine.deployUpgradeable(
+        implementationArtifact,
+        deployerPrivateKey,
+        initializerArgs,
+        initializerMethod,
+      )
     );
   }
 
@@ -787,22 +819,24 @@ export class ActionLayer {
         },
       };
     } else {
-      const tx = await contract[functionName](...args);
-      const receipt = await tx.wait();
-      return {
-        status: "success",
-        action: "call",
-        txHash: tx.hash,
-        stateChange: {
-          contract: contractAddress,
-          method: functionName,
-          arguments: args,
-        },
-        metadata: {
-          success: true,
-          gasUsed: receipt ? receipt.gasUsed.toString() : "0",
-        },
-      };
+      return TransactionQueue.enqueue(privateKey, async () => {
+        const tx = await contract[functionName](...args);
+        const receipt = await tx.wait();
+        return {
+          status: "success",
+          action: "call",
+          txHash: tx.hash,
+          stateChange: {
+            contract: contractAddress,
+            method: functionName,
+            arguments: args,
+          },
+          metadata: {
+            success: true,
+            gasUsed: receipt ? receipt.gasUsed.toString() : "0",
+          },
+        };
+      });
     }
   }
 
@@ -1071,24 +1105,26 @@ export class ActionLayer {
         },
       };
     } else {
-      const tx = await wallet.sendTransaction({
-        to,
-        value: amount,
-      });
-      await tx.wait();
-      return {
-        status: "success",
-        action: "transfer",
-        txHash: tx.hash,
-        stateChange: {
+      return TransactionQueue.enqueue(privateKey, async () => {
+        const tx = await wallet.sendTransaction({
           to,
-          amount,
-        },
-        metadata: {
-          success: true,
-          transactionHash: tx.hash,
-        },
-      };
+          value: amount,
+        });
+        await tx.wait();
+        return {
+          status: "success",
+          action: "transfer",
+          txHash: tx.hash,
+          stateChange: {
+            to,
+            amount,
+          },
+          metadata: {
+            success: true,
+            transactionHash: tx.hash,
+          },
+        };
+      });
     }
   }
 

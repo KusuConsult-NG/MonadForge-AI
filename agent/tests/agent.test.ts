@@ -1,7 +1,9 @@
-import { AgentIdentity, MockPaymentAdapter, MonetizedExecutor, AgentRouter, AgentMarketplace, EthersPaymentAdapter } from "../src/index";
+import { AgentIdentity, MockPaymentAdapter, MonetizedExecutor, AgentRouter, AgentMarketplace, EthersPaymentAdapter, calculateDynamicPrice } from "../src/index";
 import { ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
+import { TransactionQueue } from "../../actions/src/index";
+
 
 
 jest.mock("@monadforge/sdk", () => {
@@ -573,6 +575,173 @@ describe("Agent Package Unit Tests", () => {
       expect(result).toBe(true);
 
       connectSpy.mockRestore();
+    });
+
+    it("should cancel charges and mark them refunded", async () => {
+      const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
+      await adapter.cancelCharge(chargeId);
+      expect(adapter.getChargeStatus(chargeId)).toBe("refunded");
+    });
+
+    it("should process write operations sequentially via TransactionQueue", async () => {
+      const order: number[] = [];
+      const p1 = TransactionQueue.enqueue("0x0123456789012345678901234567890123456789012345678901234567890123", async () => {
+        await new Promise(r => setTimeout(r, 50));
+        order.push(1);
+      });
+      const p2 = TransactionQueue.enqueue("0x0123456789012345678901234567890123456789012345678901234567890123", async () => {
+        order.push(2);
+      });
+      await Promise.all([p1, p2]);
+      expect(order).toEqual([1, 2]);
+    });
+
+    it("should refund payment if skill execution fails", async () => {
+      const errorAdapter = new MockPaymentAdapter();
+      const errorExecutor = new MonetizedExecutor(errorAdapter);
+      
+      jest.spyOn((errorExecutor as any).skills, "route").mockRejectedValue(new Error("Execution Failed"));
+
+      const chargeId = await errorAdapter.createCharge("run_audit", "1.0", "MON");
+      await errorAdapter.verifyPayment(chargeId, "0x1234567890");
+      
+      await expect(
+        errorExecutor.executeSkill("run_audit", { code: "contract X {}" }, { chargeId, txHash: "0x1234567890" })
+      ).rejects.toThrow("Execution Failed");
+
+      expect(errorAdapter.getChargeStatus(chargeId)).toBe("refunded");
+    });
+
+    it("should calculate dynamic prices based on code size and congestion", () => {
+      const basePrice = "1.0";
+      
+      const price1 = calculateDynamicPrice("run_audit", { code: "" }, basePrice);
+      expect(parseFloat(price1)).toBe(1.0);
+
+      const price2 = calculateDynamicPrice("run_audit", { code: "a".repeat(5000) }, basePrice);
+      expect(parseFloat(price2)).toBeCloseTo(1.5);
+
+      process.env.GAS_CONGESTION = "high";
+      const price3 = calculateDynamicPrice("run_audit", { code: "" }, basePrice);
+      expect(parseFloat(price3)).toBeCloseTo(1.5);
+      delete process.env.GAS_CONGESTION;
+    });
+
+    it("should query agent from on-chain Registry contract fallback", async () => {
+      process.env.AGENT_REGISTRY_ADDRESS = "0xRegistryAddress0000000000000000000000000";
+      AgentRouter.clearRegistry();
+
+      const connectSpy = jest
+        .spyOn(ethers, "Contract")
+        .mockImplementation(() => {
+          return {
+            getAgent: jest.fn().mockResolvedValue([
+              "On-Chain Agent",
+              "",
+              JSON.stringify({
+                pricing: { "search_docs": { price: "0.0", token: "MON" } }
+              })
+            ]),
+          } as any;
+        });
+
+      const registeredBefore = AgentRouter.getRegisteredAgents();
+      expect(registeredBefore["on-chain-agent"]).toBeUndefined();
+
+      const res = await AgentRouter.invokeAgent("on-chain-agent", "search_docs", { query: "test" });
+      expect(res.status).toBe("success");
+
+      const registeredAfter = AgentRouter.getRegisteredAgents();
+      expect(registeredAfter["on-chain-agent"]).toBeDefined();
+      expect(registeredAfter["on-chain-agent"].name).toBe("On-Chain Agent");
+
+      connectSpy.mockRestore();
+      delete process.env.AGENT_REGISTRY_ADDRESS;
+    });
+
+    it("should attach cryptographic work attestation to skill results", async () => {
+      const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        value: ethers.parseEther("1.0"),
+      });
+      mockProvider.getTransactionReceipt.mockResolvedValue({ status: 1 });
+
+      const testExecutor = new MonetizedExecutor(adapter);
+      const result = await testExecutor.executeSkill(
+        "run_audit",
+        { code: "pragma solidity ^0.8.20; contract Test {}" },
+        { chargeId, txHash: "0x123" }
+      );
+
+      expect(result.attestation).toBeDefined();
+      expect(result.attestation.agentId).toBe("monadforge-ai");
+      expect(result.attestation.signature.startsWith("0x")).toBe(true);
+
+      const recovered = ethers.verifyMessage(
+        JSON.stringify({
+          agentId: result.attestation.agentId,
+          skillName: "run_audit",
+          timestamp: result.attestation.timestamp,
+          outputHash: result.attestation.outputHash
+        }),
+        result.attestation.signature
+      );
+      expect(recovered.startsWith("0x")).toBe(true);
+    });
+
+    it("should throw error in cancelCharge if charge is not found", async () => {
+      await expect(adapter.cancelCharge("non_existent")).rejects.toThrow("Charge not found");
+    });
+
+    it("should catch and log error if cancelCharge throws inside executeSkill", async () => {
+      const errorAdapter = new MockPaymentAdapter();
+      const errorExecutor = new MonetizedExecutor(errorAdapter);
+      jest.spyOn((errorExecutor as any).skills, "route").mockRejectedValue(new Error("Execution Failed"));
+      jest.spyOn(errorAdapter, "cancelCharge").mockRejectedValue(new Error("Cancel Failed"));
+
+      const chargeId = await errorAdapter.createCharge("run_audit", "1.0", "MON");
+      await errorAdapter.verifyPayment(chargeId, "0x1234567890");
+
+      await expect(
+        errorExecutor.executeSkill("run_audit", { code: "contract X {}" }, { chargeId, txHash: "0x1234567890" })
+      ).rejects.toThrow("Execution Failed");
+    });
+
+    it("should catch and log error if attestation generation fails", async () => {
+      const chargeId = await adapter.createCharge("run_audit", "1.0", "MON");
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        value: ethers.parseEther("1.0"),
+      });
+      mockProvider.getTransactionReceipt.mockResolvedValue({ status: 1 });
+
+      jest.spyOn(ethers, "Wallet").mockImplementationOnce(() => {
+        throw new Error("Wallet Sign Failed");
+      });
+
+      const testExecutor = new MonetizedExecutor(adapter);
+      const result = await testExecutor.executeSkill(
+        "run_audit",
+        { code: "pragma solidity ^0.8.20; contract Test {}" },
+        { chargeId, txHash: "0x123" }
+      );
+      expect(result.attestation).toBeUndefined();
+    });
+
+
+    it("should handle error in on-chain Registry fallback gracefully", async () => {
+      process.env.AGENT_REGISTRY_ADDRESS = "0xRegistryAddress";
+      const mockContract = jest.spyOn(ethers, "Contract").mockImplementationOnce(() => {
+        throw new Error("Connection failed");
+      });
+      
+      await expect(
+        AgentRouter.invokeAgent("on-chain-agent-fail", "search_docs", { query: "test" })
+      ).rejects.toThrow("not found in registry");
+
+      mockContract.mockRestore();
+      delete process.env.AGENT_REGISTRY_ADDRESS;
     });
   });
 });

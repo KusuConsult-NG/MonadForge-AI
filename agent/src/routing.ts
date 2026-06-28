@@ -77,7 +77,40 @@ export class AgentRouter {
       return this.localExecutor.executeSkill(skillName, params, paymentDetails, context);
     }
 
-    const remoteAgent = this.localRegistry.get(targetAgentId);
+    let remoteAgent = this.localRegistry.get(targetAgentId);
+
+    if (!remoteAgent && process.env.AGENT_REGISTRY_ADDRESS) {
+      logger.info(`Agent '${targetAgentId}' not found locally. Querying Registry contract at ${process.env.AGENT_REGISTRY_ADDRESS}`);
+      try {
+        const config = getConfig();
+        const provider = new ethers.JsonRpcProvider(config.MONAD_RPC_URL);
+        const registryAbi = [
+          "function getAgent(string agentId) external view returns (string name, string endpointUrl, string manifestJson)"
+        ];
+        const registryContract = new ethers.Contract(process.env.AGENT_REGISTRY_ADDRESS, registryAbi, provider);
+        const [name, endpointUrl, manifestJson] = await registryContract.getAgent(targetAgentId);
+        
+        if (name || endpointUrl || manifestJson) {
+          let parsedManifest = {};
+          try {
+            parsedManifest = JSON.parse(manifestJson);
+          } catch {}
+          
+          remoteAgent = {
+            agentId: targetAgentId,
+            name: name || targetAgentId,
+            endpointUrl: endpointUrl || "",
+            ...parsedManifest
+          };
+          this.localRegistry.set(targetAgentId, remoteAgent);
+          this.persistRegistry();
+          logger.info(`Dynamically registered peer '${targetAgentId}' from on-chain Registry.`);
+        }
+      } catch (err: any) {
+        logger.error(`On-chain Registry query failed for '${targetAgentId}'`, err);
+      }
+    }
+
     if (!remoteAgent) {
       throw new Error(`Target agent '${targetAgentId}' not found in registry.`);
     }
