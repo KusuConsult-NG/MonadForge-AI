@@ -346,4 +346,20 @@ describe("Node HTTP Server & Client Tests", () => {
 
     globalThis.fetch = originalFetch;
   });
+
+  it("should reject POST /invoke with 413 Payload Too Large if request body is too large", async () => {
+    const hugeBody = "a".repeat(2 * 1024 * 1024 + 10);
+    const response = await fetch(`http://localhost:${testPort}/invoke`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Node-Sender": wallet.address,
+        "X-Node-Signature": "0x" + "0".repeat(130),
+      },
+      body: hugeBody,
+    });
+    expect(response.status).toBe(413);
+    const data = await response.json();
+    expect(data.error).toContain("Payload Too Large");
+  });
 });

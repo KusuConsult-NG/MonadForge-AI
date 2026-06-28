@@ -68,11 +68,19 @@ export class NodeServer {
 
         if (method === "POST" && url === "/invoke") {
           let body = "";
+          let exceeded = false;
           req.on("data", (chunk) => {
+            if (exceeded) return;
             body += chunk;
+            if (body.length > 2 * 1024 * 1024) {
+              exceeded = true;
+              res.writeHead(413, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Payload Too Large: exceeded limit of 2MB" }));
+            }
           });
 
           req.on("end", async () => {
+            if (exceeded) return;
             try {
               const signature = req.headers["x-node-signature"] as string;
               const sender = req.headers["x-node-sender"] as string;
