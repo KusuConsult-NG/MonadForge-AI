@@ -159,6 +159,42 @@ export class DeploymentEngine implements IDeploymentEngine {
   ): Promise<PrimitiveOutput<CompilationResult>> {
     logger.info("Compiling smart contract files", { operation: "compile" });
 
+    // Validate path traversal
+    for (const [filePath, content] of Object.entries(projectFiles)) {
+      const normalized = path.normalize(filePath);
+      if (normalized.startsWith("..") || path.isAbsolute(normalized) || filePath.includes("..")) {
+        return {
+          status: "failure",
+          action: "compile",
+          metadata: {
+            success: false,
+            abi: [],
+            bytecode: "",
+            errors: [`Path traversal detected in contract file path: ${filePath}`],
+          },
+        };
+      }
+
+      // Check for malicious imports inside source code
+      const importRegex = /import\s+["']([^"']+)["']/g;
+      let match;
+      while ((match = importRegex.exec(content)) !== null) {
+        const importPath = match[1];
+        if (importPath.includes("..") || path.isAbsolute(importPath)) {
+          return {
+            status: "failure",
+            action: "compile",
+            metadata: {
+              success: false,
+              abi: [],
+              bytecode: "",
+              errors: [`Path traversal detected in import statement: ${importPath}`],
+            },
+          };
+        }
+      }
+    }
+
     if (Object.keys(projectFiles).length === 0) {
       return {
         status: "failure",

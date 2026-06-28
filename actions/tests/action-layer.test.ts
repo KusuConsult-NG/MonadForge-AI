@@ -280,6 +280,22 @@ describe("DeploymentEngine Unit Tests", () => {
       );
     });
 
+    it("should fail compilation if a filename contains path traversal", async () => {
+      const res = await engine.compile({
+        "contracts/../../secrets.json": "pragma solidity ^0.8.20; contract Token {}",
+      });
+      expect(res.status).toBe("failure");
+      expect(res.metadata.errors?.[0]).toContain("Path traversal detected in contract file path");
+    });
+
+    it("should fail compilation if an import statement contains path traversal", async () => {
+      const res = await engine.compile({
+        "contracts/Token.sol": 'pragma solidity ^0.8.20; import "../../../secrets.json"; contract Token {}',
+      });
+      expect(res.status).toBe("failure");
+      expect(res.metadata.errors?.[0]).toContain("Path traversal detected in import statement");
+    });
+
     it("should compile contracts with local imports successfully", async () => {
       const files = {
         "contracts/Token.sol":

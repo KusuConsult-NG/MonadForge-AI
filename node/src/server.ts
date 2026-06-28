@@ -9,6 +9,7 @@ const logger = createLogger("NodeServer");
 export class NodeServer {
   private server: http.Server | null = null;
   private executor: MonetizedExecutor;
+  private ipRequestCounts = new Map<string, { count: number; resetTime: number }>();
 
   constructor(executor: MonetizedExecutor = new MonetizedExecutor()) {
     this.executor = executor;
@@ -44,6 +45,24 @@ export class NodeServer {
       }
 
       this.server = http.createServer(async (req, res) => {
+        const ip = req.socket.remoteAddress || "unknown";
+        const now = Date.now();
+        const ipData = this.ipRequestCounts.get(ip);
+        if (ipData) {
+          if (now > ipData.resetTime) {
+            this.ipRequestCounts.set(ip, { count: 1, resetTime: now + 60000 });
+          } else {
+            ipData.count++;
+            if (ipData.count > 60) {
+              res.writeHead(429, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Too Many Requests. Rate limit exceeded." }));
+              return;
+            }
+          }
+        } else {
+          this.ipRequestCounts.set(ip, { count: 1, resetTime: now + 60000 });
+        }
+
         const { method, url } = req;
 
         // CORS headers

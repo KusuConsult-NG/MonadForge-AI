@@ -396,4 +396,14 @@ describe("Node HTTP Server & Client Tests", () => {
     const data = await response.json();
     expect(data.error).toContain("Invalid JSON payload structure");
   });
+
+  it("should enforce IP-based rate limits and return 429 Too Many Requests on burst", async () => {
+    for (let i = 0; i < 60; i++) {
+      await fetch(`http://localhost:${testPort}/manifest`);
+    }
+    const response = await fetch(`http://localhost:${testPort}/manifest`);
+    expect(response.status).toBe(429);
+    const data = await response.json();
+    expect(data.error).toContain("Rate limit exceeded");
+  });
 });
