@@ -117,12 +117,14 @@ export class NodeServer {
               const payload = JSON.parse(body);
               const { skillName, params, paymentDetails, timestamp } = payload;
 
-              // Validate request age (prevent replay attacks: max 5 minutes drift)
+              // Validate request age (prevent replay attacks: configurable drift margin, default 5 minutes)
+              const maxDriftEnv = process.env.MAX_CLOCK_DRIFT_MS;
+              const maxDrift = maxDriftEnv ? parseInt(maxDriftEnv, 10) : 300000;
               const requestTime = parseInt(timestamp, 10);
               const currentTime = Date.now();
               if (
                 isNaN(requestTime) ||
-                Math.abs(currentTime - requestTime) > 300000
+                (maxDrift > 0 && Math.abs(currentTime - requestTime) > maxDrift)
               ) {
                 res.writeHead(400, { "Content-Type": "application/json" });
                 res.end(

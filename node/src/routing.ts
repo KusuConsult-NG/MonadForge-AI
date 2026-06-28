@@ -97,16 +97,57 @@ export class NodeRouter {
       try {
         const config = getConfig();
         const provider = new ethers.JsonRpcProvider(config.MONAD_RPC_URL);
-        const registryAbi = [
-          "function getAgent(string agentId) external view returns (string name, string endpointUrl, string manifestJson)",
-        ];
         const registryContract = new ethers.Contract(
           process.env.AGENT_REGISTRY_ADDRESS,
-          registryAbi,
+          [
+            "function getAgent(string agentId) external view returns (string name, string endpointUrl, string manifestJson)",
+          ],
           provider,
         );
-        const [name, endpointUrl, manifestJson] =
-          await registryContract.getAgent(targetAgentId);
+
+        let name = "";
+        let endpointUrl = "";
+        let manifestJson = "";
+
+        try {
+          const res = await registryContract.getAgent(targetAgentId);
+          name = res[0];
+          endpointUrl = res[1];
+          manifestJson = res[2];
+        } catch (err: any) {
+          logger.warn(`getAgent query failed, attempting fallback (getNode): ${err.message}`);
+          try {
+            const nodeContract = new ethers.Contract(
+              process.env.AGENT_REGISTRY_ADDRESS,
+              [
+                "function getNode(string nodeRef) external view returns (string name, string endpointUrl, string manifestJson)",
+              ],
+              provider,
+            );
+            const res = await nodeContract.getNode(targetAgentId);
+            name = res[0];
+            endpointUrl = res[1];
+            manifestJson = res[2];
+          } catch (err2: any) {
+            logger.warn(`getNode query failed, attempting fallback (nodes mapping): ${err2.message}`);
+            try {
+              const mappingContract = new ethers.Contract(
+                process.env.AGENT_REGISTRY_ADDRESS,
+                [
+                  "function nodes(string nodeRef) external view returns (string name, string endpointUrl, string manifestJson)",
+                ],
+                provider,
+              );
+              const res = await mappingContract.nodes(targetAgentId);
+              name = res[0];
+              endpointUrl = res[1];
+              manifestJson = res[2];
+            } catch (err3: any) {
+              logger.error("All registry method queries failed", err3);
+              throw err3;
+            }
+          }
+        }
 
         if (name || endpointUrl || manifestJson) {
           let parsedManifest = {};

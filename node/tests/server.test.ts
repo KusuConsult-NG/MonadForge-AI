@@ -132,6 +132,56 @@ describe("Node HTTP Server & Client Tests", () => {
     expect(data.error).toContain("Request expired");
   });
 
+  it("should allow POST /invoke with high drift if MAX_CLOCK_DRIFT_MS is increased", async () => {
+    process.env.MAX_CLOCK_DRIFT_MS = "900000"; // 15 minutes allowed
+    const oldTimestamp = (Date.now() - 600000).toString();
+    const bodyObj = {
+      skillName: "search_docs",
+      params: { query: "test" },
+      timestamp: oldTimestamp,
+    };
+    const bodyStr = JSON.stringify(bodyObj);
+
+    const correctSig = await wallet.signMessage(bodyStr);
+
+    const response = await fetch(`http://localhost:${testPort}/invoke`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Node-Sender": wallet.address,
+        "X-Node-Signature": correctSig,
+      },
+      body: bodyStr,
+    });
+    expect(response.status).toBe(200);
+    delete process.env.MAX_CLOCK_DRIFT_MS;
+  });
+
+  it("should allow POST /invoke with high drift if MAX_CLOCK_DRIFT_MS is set to 0 (disabled)", async () => {
+    process.env.MAX_CLOCK_DRIFT_MS = "0"; // check disabled
+    const oldTimestamp = (Date.now() - 600000).toString();
+    const bodyObj = {
+      skillName: "search_docs",
+      params: { query: "test" },
+      timestamp: oldTimestamp,
+    };
+    const bodyStr = JSON.stringify(bodyObj);
+
+    const correctSig = await wallet.signMessage(bodyStr);
+
+    const response = await fetch(`http://localhost:${testPort}/invoke`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Node-Sender": wallet.address,
+        "X-Node-Signature": correctSig,
+      },
+      body: bodyStr,
+    });
+    expect(response.status).toBe(200);
+    delete process.env.MAX_CLOCK_DRIFT_MS;
+  });
+
   it("should execute skill successfully on valid signed request", async () => {
     const bodyObj = {
       skillName: "search_docs",

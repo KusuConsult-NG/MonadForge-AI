@@ -378,7 +378,19 @@ export class DeploymentEngine implements IDeploymentEngine {
         artifact.bytecode,
         wallet,
       );
-      const contract = await factory.deploy();
+      let contract;
+      try {
+        contract = await factory.deploy();
+      } catch (err: any) {
+        const errStr = String(err).toLowerCase();
+        if (errStr.includes("nonce") || errStr.includes("underpriced")) {
+          logger.warn("Nonce collision detected during deployment. Resetting nonce and retrying once...");
+          wallet.reset();
+          contract = await factory.deploy();
+        } else {
+          throw err;
+        }
+      }
       await contract.waitForDeployment();
 
       const contractAddress = await contract.getAddress();
@@ -879,7 +891,19 @@ export class ActionLayer {
       };
     } else {
       return TransactionQueue.enqueue(privateKey, async () => {
-        const tx = await contract[functionName](...args);
+        let tx;
+        try {
+          tx = await contract[functionName](...args);
+        } catch (err: any) {
+          const errStr = String(err).toLowerCase();
+          if (errStr.includes("nonce") || errStr.includes("underpriced")) {
+            logger.warn("Nonce collision detected during write execution. Resetting nonce and retrying once...");
+            wallet.reset();
+            tx = await contract[functionName](...args);
+          } else {
+            throw err;
+          }
+        }
         const receipt = await tx.wait();
         return {
           status: "success",
@@ -1169,10 +1193,25 @@ export class ActionLayer {
       };
     } else {
       return TransactionQueue.enqueue(privateKey, async () => {
-        const tx = await wallet.sendTransaction({
-          to,
-          value: amount,
-        });
+        let tx;
+        try {
+          tx = await wallet.sendTransaction({
+            to,
+            value: amount,
+          });
+        } catch (err: any) {
+          const errStr = String(err).toLowerCase();
+          if (errStr.includes("nonce") || errStr.includes("underpriced")) {
+            logger.warn("Nonce collision detected during native transfer. Resetting nonce and retrying once...");
+            wallet.reset();
+            tx = await wallet.sendTransaction({
+              to,
+              value: amount,
+            });
+          } else {
+            throw err;
+          }
+        }
         await tx.wait();
         return {
           status: "success",

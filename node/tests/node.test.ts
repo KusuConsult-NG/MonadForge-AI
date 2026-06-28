@@ -520,9 +520,159 @@ describe("Node Package Unit Tests", () => {
       connectSpy.mockRestore();
     });
 
-    it("should instantiate with default provider if not provided", () => {
+    it("should verify ERC-20 payment successfully via unindexed logs fallback", async () => {
+      const tokenAddress = "0x1234567890123456789012345678901234567890";
+      const chargeId = await adapter.createCharge(
+        "generate_contract",
+        "0.5",
+        tokenAddress,
+      );
+
+      mockProvider.getTransaction.mockResolvedValue({
+        to: tokenAddress,
+      });
+
+      const coder = ethers.AbiCoder.defaultAbiCoder();
+      const amountData = coder.encode(
+        ["address", "address", "uint256"],
+        [
+          "0x0000000000000000000000000000000000000000",
+          "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+          ethers.parseEther("0.5"),
+        ]
+      );
+
+      mockProvider.getTransactionReceipt.mockResolvedValue({
+        status: 1,
+        logs: [
+          {
+            address: tokenAddress,
+            topics: [ethers.id("Transfer(address,address,uint256)")],
+            data: amountData,
+          },
+        ],
+      });
+
+      const result = await adapter.verifyPayment(chargeId, "0x54321");
+      expect(result).toBe(true);
+      expect(adapter.getChargeStatus(chargeId)).toBe("paid");
+    });
+
+    it("should verify ERC-20 payment successfully via tx input data fallback", async () => {
+      const tokenAddress = "0x1234567890123456789012345678901234567890";
+      const chargeId = await adapter.createCharge(
+        "generate_contract",
+        "0.5",
+        tokenAddress,
+      );
+
+      const coder = ethers.AbiCoder.defaultAbiCoder();
+      const inputData = "0xa9059cbb" + coder.encode(
+        ["address", "uint256"],
+        [
+          "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+          ethers.parseEther("0.5"),
+        ]
+      ).slice(2);
+
+      mockProvider.getTransaction.mockResolvedValue({
+        to: tokenAddress,
+        data: inputData,
+      });
+
+      mockProvider.getTransactionReceipt.mockResolvedValue({
+        status: 1,
+        logs: [],
+      });
+
+      const result = await adapter.verifyPayment(chargeId, "0x54321");
+      expect(result).toBe(true);
+      expect(adapter.getChargeStatus(chargeId)).toBe("paid");
+    });
+
+    it("should instantiate with default provider if not provided and cover default provider creation", async () => {
       const defaultAdapter = new EthersPaymentAdapter();
       expect(defaultAdapter).toBeDefined();
+
+      const connectSpy = jest
+        .spyOn(ethers, "JsonRpcProvider")
+        .mockImplementation(() => {
+          return mockProvider;
+        });
+
+      const chargeId = await defaultAdapter.createCharge("run_audit", "1.0", "MON");
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        value: ethers.parseEther("1.0"),
+      });
+      mockProvider.getTransactionReceipt.mockResolvedValue({
+        status: 1,
+      });
+
+      const result = await defaultAdapter.verifyPayment(
+        chargeId,
+        "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+      );
+      expect(result).toBe(true);
+      connectSpy.mockRestore();
+    });
+
+    it("should derive receiver address from DEPLOYER_PRIVATE_KEY", async () => {
+      const originalKey = process.env.TEST_DEPLOYER_PRIVATE_KEY;
+      const originalReceiver = process.env.PAYMENT_RECEIVER_ADDRESS;
+      delete process.env.PAYMENT_RECEIVER_ADDRESS;
+      process.env.TEST_DEPLOYER_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+
+      const walletAdapter = new EthersPaymentAdapter(mockProvider);
+      const chargeId = await walletAdapter.createCharge("run_audit", "1.0", "MON");
+
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        value: ethers.parseEther("1.0"),
+      });
+      mockProvider.getTransactionReceipt.mockResolvedValue({
+        status: 1,
+      });
+
+      const result = await walletAdapter.verifyPayment(
+        chargeId,
+        "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+      );
+      expect(result).toBe(true);
+
+      if (originalKey) process.env.TEST_DEPLOYER_PRIVATE_KEY = originalKey;
+      else delete process.env.TEST_DEPLOYER_PRIVATE_KEY;
+      if (originalReceiver) process.env.PAYMENT_RECEIVER_ADDRESS = originalReceiver;
+      else delete process.env.PAYMENT_RECEIVER_ADDRESS;
+    });
+
+    it("should handle error if DEPLOYER_PRIVATE_KEY is invalid format", async () => {
+      const originalKey = process.env.TEST_DEPLOYER_PRIVATE_KEY;
+      const originalReceiver = process.env.PAYMENT_RECEIVER_ADDRESS;
+      delete process.env.PAYMENT_RECEIVER_ADDRESS;
+      process.env.TEST_DEPLOYER_PRIVATE_KEY = "invalid-key-format";
+
+      const walletAdapter = new EthersPaymentAdapter(mockProvider);
+      const chargeId = await walletAdapter.createCharge("run_audit", "1.0", "MON");
+
+      mockProvider.getTransaction.mockResolvedValue({
+        to: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        value: ethers.parseEther("1.0"),
+      });
+      mockProvider.getTransactionReceipt.mockResolvedValue({
+        status: 1,
+      });
+
+      const result = await walletAdapter.verifyPayment(
+        chargeId,
+        "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+      );
+      expect(result).toBe(true); // Should fallback to default address
+
+      if (originalKey) process.env.TEST_DEPLOYER_PRIVATE_KEY = originalKey;
+      else delete process.env.TEST_DEPLOYER_PRIVATE_KEY;
+      if (originalReceiver) process.env.PAYMENT_RECEIVER_ADDRESS = originalReceiver;
+      else delete process.env.PAYMENT_RECEIVER_ADDRESS;
     });
 
     it("should throw error if charge is not found during verifyPayment", async () => {
@@ -755,6 +905,15 @@ describe("Node Package Unit Tests", () => {
       );
       expect(parseFloat(price3)).toBeCloseTo(1.5);
       delete process.env.GAS_CONGESTION;
+
+      process.env.GAS_CONGESTION_LEVEL = "2.0";
+      const price4 = calculateDynamicPrice(
+        "run_audit",
+        { code: "" },
+        basePrice,
+      );
+      expect(parseFloat(price4)).toBeCloseTo(2.8284);
+      delete process.env.GAS_CONGESTION_LEVEL;
     });
 
     it("should query node from on-chain Registry contract fallback", async () => {
@@ -789,6 +948,144 @@ describe("Node Package Unit Tests", () => {
       const registeredAfter = NodeRouter.getRegisteredAgents();
       expect(registeredAfter["on-chain-node"]).toBeDefined();
       expect(registeredAfter["on-chain-node"].name).toBe("On-Chain Node");
+
+      connectSpy.mockRestore();
+      delete process.env.AGENT_REGISTRY_ADDRESS;
+    });
+
+    it("should query node from on-chain Registry contract fallback via getNode and nodes mapping fallbacks", async () => {
+      process.env.AGENT_REGISTRY_ADDRESS =
+        "0xRegistryAddress0000000000000000000000000";
+      NodeRouter.clearRegistry();
+
+      let mockGetAgentCalled = false;
+      let mockGetNodeCalled = false;
+      let mockNodesCalled = false;
+
+      const connectSpy = jest
+        .spyOn(ethers, "Contract")
+        .mockImplementation((address, abi: any) => {
+          const functions = abi.map((item: string) => item.toLowerCase());
+          if (functions.some((f: string) => f.includes("getagent"))) {
+            return {
+              getAgent: jest.fn().mockImplementation(() => {
+                mockGetAgentCalled = true;
+                throw new Error("getAgent failed");
+              }),
+            } as any;
+          } else if (functions.some((f: string) => f.includes("getnode"))) {
+            return {
+              getNode: jest.fn().mockImplementation(() => {
+                mockGetNodeCalled = true;
+                throw new Error("getNode failed");
+              }),
+            } as any;
+          } else if (functions.some((f: string) => f.includes("nodes"))) {
+            return {
+              nodes: jest.fn().mockImplementation(() => {
+                mockNodesCalled = true;
+                return [
+                  "Fallback Node via Mapping",
+                  "",
+                  JSON.stringify({
+                    pricing: { search_docs: { price: "0.0", token: "MON" } },
+                  }),
+                ];
+              }),
+            } as any;
+          }
+          return {} as any;
+        });
+
+      const res = await NodeRouter.invokeAgent(
+        "fallback-node-mapping",
+        "search_docs",
+        { query: "test" },
+      );
+      expect(res.status).toBe("success");
+      expect(mockGetAgentCalled).toBe(true);
+      expect(mockGetNodeCalled).toBe(true);
+      expect(mockNodesCalled).toBe(true);
+
+      const registered = NodeRouter.getRegisteredAgents();
+      expect(registered["fallback-node-mapping"]).toBeDefined();
+      expect(registered["fallback-node-mapping"].name).toBe("Fallback Node via Mapping");
+
+      connectSpy.mockRestore();
+      delete process.env.AGENT_REGISTRY_ADDRESS;
+    });
+
+    it("should query node from on-chain Registry contract fallback via getNode success path", async () => {
+      process.env.AGENT_REGISTRY_ADDRESS =
+        "0xRegistryAddress0000000000000000000000000";
+      NodeRouter.clearRegistry();
+
+      let mockGetAgentCalled = false;
+      let mockGetNodeCalled = false;
+
+      const connectSpy = jest
+        .spyOn(ethers, "Contract")
+        .mockImplementation((address, abi: any) => {
+          const functions = abi.map((item: string) => item.toLowerCase());
+          if (functions.some((f: string) => f.includes("getagent"))) {
+            return {
+              getAgent: jest.fn().mockImplementation(() => {
+                mockGetAgentCalled = true;
+                throw new Error("getAgent failed");
+              }),
+            } as any;
+          } else if (functions.some((f: string) => f.includes("getnode"))) {
+            return {
+              getNode: jest.fn().mockImplementation(() => {
+                mockGetNodeCalled = true;
+                return [
+                  "Fallback Node via GetNode",
+                  "",
+                  JSON.stringify({
+                    pricing: { search_docs: { price: "0.0", token: "MON" } },
+                  }),
+                ];
+              }),
+            } as any;
+          }
+          return {} as any;
+        });
+
+      const res = await NodeRouter.invokeAgent(
+        "fallback-node-getnode",
+        "search_docs",
+        { query: "test" },
+      );
+      expect(res.status).toBe("success");
+      expect(mockGetAgentCalled).toBe(true);
+      expect(mockGetNodeCalled).toBe(true);
+
+      const registered = NodeRouter.getRegisteredAgents();
+      expect(registered["fallback-node-getnode"]).toBeDefined();
+      expect(registered["fallback-node-getnode"].name).toBe("Fallback Node via GetNode");
+
+      connectSpy.mockRestore();
+      delete process.env.AGENT_REGISTRY_ADDRESS;
+    });
+
+    it("should fail query node if all on-chain Registry contract fallback methods fail", async () => {
+      process.env.AGENT_REGISTRY_ADDRESS =
+        "0xRegistryAddress0000000000000000000000000";
+      NodeRouter.clearRegistry();
+
+      const connectSpy = jest
+        .spyOn(ethers, "Contract")
+        .mockImplementation((address, abi: any) => {
+          return {
+            getAgent: jest.fn().mockRejectedValue(new Error("getAgent failed")),
+            getNode: jest.fn().mockRejectedValue(new Error("getNode failed")),
+            nodes: jest.fn().mockRejectedValue(new Error("nodes failed")),
+          } as any;
+        });
+
+      await expect(
+        NodeRouter.invokeAgent("unresolvable-node", "search_docs", { query: "test" })
+      ).rejects.toThrow("Target node 'unresolvable-node' not found in registry.");
 
       connectSpy.mockRestore();
       delete process.env.AGENT_REGISTRY_ADDRESS;
